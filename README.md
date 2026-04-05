@@ -4,6 +4,18 @@ Aplicação mobile desenvolvida como parte do Projeto Integrador 3 (2026) do cur
 
 O projeto consiste na implementação de uma plataforma digital para simulação de investimento em startups vinculadas ao ecossistema Mescla, por meio da negociação simulada de tokens.
 
+---
+
+## ✨ Funcionalidades
+
+- Cadastro e autenticação de usuários
+- Visualização de startups disponíveis para investimento
+- Compra e venda de tokens
+- Acompanhamento de saldo e investimentos
+- Simulação de valorização de ativos
+
+---
+
 ## 👩‍💻 Integrantes
 
 - Ana Júlia Conceição da Silva
@@ -26,6 +38,18 @@ O projeto consiste na implementação de uma plataforma digital para simulação
 ### Controle de Versão
 - Git
 - GitHub
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+MesclaInvest/
+├── backend/    # API e regras de negócio  
+├── frontend/   # Aplicação mobile (Flutter)  
+├── docs/       # Documentação do projeto  
+└── README.md  
+```
 
 ## 🚀 Como Executar o Projeto
 
