@@ -1,2 +1,2 @@
-export { login } from "./handlers/login";
 export { recoverPassword } from "./handlers/recoverPassword";
+export { me } from "./handlers/me";
