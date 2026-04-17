@@ -18,3 +18,11 @@ export async function findUserByEmail(email: string): Promise<{id: string} & Use
     ...(doc.data() as UserDocument),
   };
 }
+
+export async function updateUserPassword(userId: string, senha: string) {
+  const usersCollection = db.collection("users");
+
+  await usersCollection.doc(userId).update({
+    senha,
+  });
+}
