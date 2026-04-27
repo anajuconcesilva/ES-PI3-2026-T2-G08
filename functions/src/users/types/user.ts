@@ -24,6 +24,12 @@ export interface User {
     telefoneRaw: string;
     saldo: number;
     createdAt: Timestamp;
+
+    mfaEnabled?: boolean;
+    mfaVerified?: boolean;
+    mfaCode?: string | null;
+    mfaExpiresAt?: number | null;
+    mfaVerifiedAt?: number | null;
 }
 
 /**

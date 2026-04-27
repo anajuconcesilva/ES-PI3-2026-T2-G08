@@ -11,3 +11,5 @@
  */
 
 export { registerUser } from "./handlers/registerUser";
+export { getProfile } from "./handlers/getProfile";
+export { updateProfile } from "./handlers/updateProfile";

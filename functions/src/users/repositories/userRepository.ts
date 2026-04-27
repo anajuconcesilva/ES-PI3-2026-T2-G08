@@ -9,7 +9,10 @@
  *
  * Funções:
  * - createUser: cria um novo documento de usuário
- * - findByCPF: busca usuário pelo CPF (usado para evitar duplicidade)
+ * - findByCPF: busca usuário pelo CPF
+ * - findByEmail: busca usuário pelo e-mail
+ * - findByAuthUid: busca usuário pelo UID do Firebase Auth
+ * - updateUser: atualiza dados do usuário
  *
  * Camada de abstração:
  * - Evita acesso direto ao Firestore dentro dos handlers
@@ -56,6 +59,20 @@ export async function findByCPF(cpfRaw: string): Promise<UserWithId | null> {
   };
 }
 
+// Buscar por UID do Firebase Auth
+export async function findByAuthUid(
+  authUid: string
+): Promise<UserWithId | null> {
+  const doc = await db.collection(COLLECTION).doc(authUid).get();
+
+  if (!doc.exists) return null;
+
+  return {
+    id: doc.id,
+    ...(doc.data() as User),
+  };
+}
+
 // Criar usuário
 export async function createUser(user: User): Promise<UserWithId> {
   const docRef = db.collection(COLLECTION).doc(user.authUid);
@@ -65,5 +82,22 @@ export async function createUser(user: User): Promise<UserWithId> {
   return {
     id: docRef.id,
     ...user,
+  };
+}
+
+// Atualizar usuário
+export async function updateUser(
+  authUid: string,
+  data: Partial<User>
+): Promise<UserWithId> {
+  const docRef = db.collection(COLLECTION).doc(authUid);
+
+  await docRef.set(data, { merge: true });
+
+  const updatedDoc = await docRef.get();
+
+  return {
+    id: updatedDoc.id,
+    ...(updatedDoc.data() as User),
   };
 }
