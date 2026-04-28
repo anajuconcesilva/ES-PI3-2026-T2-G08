@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mescla_invest_app/screens/telaesqueci.dart';
-import 'package:mescla_invest_app/screens/telarecuperacao.dart';
-import 'package:mescla_invest_app/screens/telaredefinir.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
@@ -26,10 +23,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/inicio': (_) => const TelaInicio(),
         '/login': (_) => const TelaLogin(),
-        '/cadastro': (_) => const TelaCadastro(),
-        '/esqueci' : (_) => const TelaEsqueci(),
-        '/recuperacao': (_) => const TelaRecuperacao(),
-        '/redefinir': (_) => const TelaRedefinir()
+        '/cadastro': (_) => const TelaCadastro()
       },
     );
   }
