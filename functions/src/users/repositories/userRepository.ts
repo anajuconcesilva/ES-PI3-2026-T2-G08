@@ -19,7 +19,7 @@
  */
 
 import { db } from "../../auth/shared/firebase";
-import { User, UserWithId } from "../types/user";
+import { User, UserWithId } from "../types/index";
 
 const COLLECTION = "users";
 
