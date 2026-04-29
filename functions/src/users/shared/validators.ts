@@ -155,7 +155,7 @@ export function normalizeString(value: unknown): string {
 }
 
 /*
- * Validador de entrada completo
+ * Validador de entrada completo para cadastro de usuário
  */
 
 type RegisterInput = {
@@ -200,5 +200,48 @@ export function validateRegisterInput(data: any): ValidationResult {
   return {
     valid: true,
     data: { nome, email, cpf, telefone, senha }
+  };
+}
+
+/*
+ * Validador de entrada completo para atualizar perfil
+ */
+
+type UpdateProfileInput = {
+  nome: string;
+  email: string;
+  cpf: string;
+  telefone: string;
+};
+
+type UpdateValidationResult =
+  | { valid: false; message: string }
+  | { valid: true; data: UpdateProfileInput };
+
+export function validateUpdateProfileInput(data: any): UpdateValidationResult {
+  const nome = normalizeString(data.nome);
+  const email = normalizeString(data.email).toLowerCase();
+  const cpf = normalizeCPF(data.cpf);
+  const telefone = normalizePhone(data.telefone);
+
+if (!nome || !email || !cpf || !telefone) {
+  return { valid: false, message: "Todos os campos são obrigatórios" };
+}
+
+if (!validateEmail(email)) {
+  return { valid: false, message: "E-mail inválido" };
+}
+
+if (!validateCPF(cpf)) {
+  return { valid: false, message: "CPF inválido" };
+}
+
+if (!validatePhone(telefone)) {
+  return { valid: false, message: "Telefone inválido" };
+}
+
+return {
+    valid: true,
+    data: { nome, email, cpf, telefone }
   };
 }
