@@ -9,9 +9,9 @@
  *
  * Funções:
  * - createUser: cria um novo documento de usuário
- * - findByCPF: busca usuário pelo CPF
- * - findByEmail: busca usuário pelo e-mail
- * - findByAuthUid: busca usuário pelo UID do Firebase Auth
+ * - getUserByCPF: busca usuário pelo CPF
+ * - getUserByEmail: busca usuário pelo e-mail
+ * - getUserByAuthUid: busca usuário pelo UID do Firebase Auth
  * - updateUser: atualiza dados do usuário
  *
  * Camada de abstração:
@@ -19,14 +19,18 @@
  */
 
 import { db } from "../../auth/shared/firebase";
-import { User, UserWithId } from "../types/index";
+import { User, UserWithId } from "../types";
 
 const COLLECTION = "users";
+const userCollection = db.collection(COLLECTION);
 
+// =========================
 // Buscar por email
-export async function findByEmail(email: string): Promise<UserWithId | null> {
-  const snapshot = await db
-    .collection(COLLECTION)
+// =========================
+export async function getUserByEmail(
+  email: string
+): Promise<UserWithId | null> {
+  const snapshot = await userCollection
     .where("email", "==", email)
     .limit(1)
     .get();
@@ -41,10 +45,13 @@ export async function findByEmail(email: string): Promise<UserWithId | null> {
   };
 }
 
+// =========================
 // Buscar por CPF
-export async function findByCPF(cpfRaw: string): Promise<UserWithId | null> {
-  const snapshot = await db
-    .collection(COLLECTION)
+// =========================
+export async function getUserByCPF(
+  cpfRaw: string
+): Promise<UserWithId | null> {
+  const snapshot = await userCollection
     .where("cpfRaw", "==", cpfRaw)
     .limit(1)
     .get();
@@ -59,11 +66,13 @@ export async function findByCPF(cpfRaw: string): Promise<UserWithId | null> {
   };
 }
 
-// Buscar por UID do Firebase Auth
-export async function findByAuthUid(
+// =========================
+// Buscar por UID do Auth
+// =========================
+export async function getUserByAuthUid(
   authUid: string
 ): Promise<UserWithId | null> {
-  const doc = await db.collection(COLLECTION).doc(authUid).get();
+  const doc = await userCollection.doc(authUid).get();
 
   if (!doc.exists) return null;
 
@@ -73,9 +82,11 @@ export async function findByAuthUid(
   };
 }
 
+// =========================
 // Criar usuário
+// =========================
 export async function createUser(user: User): Promise<UserWithId> {
-  const docRef = db.collection(COLLECTION).doc(user.authUid);
+  const docRef = userCollection.doc(user.authUid);
 
   await docRef.set(user);
 
@@ -85,16 +96,22 @@ export async function createUser(user: User): Promise<UserWithId> {
   };
 }
 
+// =========================
 // Atualizar usuário
+// =========================
 export async function updateUser(
   authUid: string,
   data: Partial<User>
 ): Promise<UserWithId> {
-  const docRef = db.collection(COLLECTION).doc(authUid);
+  const docRef = userCollection.doc(authUid);
 
-  await docRef.set(data, { merge: true });
+  await docRef.update(data);
 
   const updatedDoc = await docRef.get();
+
+  if (!updatedDoc.exists) {
+    throw new Error("Usuário não encontrado");
+  }
 
   return {
     id: updatedDoc.id,

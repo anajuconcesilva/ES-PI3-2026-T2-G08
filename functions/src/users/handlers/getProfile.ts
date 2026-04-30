@@ -1,7 +1,7 @@
 /**
  * Código feito por Laura Cristine Soares, RA: 24802431
  *
-  * ================================
+ * ================================
  * GET PROFILE - FIREBASE FUNCTION
  * ================================
  *
@@ -9,14 +9,14 @@
  */
 
 import { onCall, HttpsError } from "firebase-functions/https";
-import { findByAuthUid } from "../repositories/userRepository";
+import { getUserByAuthUid } from "../repositories/userRepository";
 
 export const getProfile = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Usuário não autenticado");
   }
 
-  const user = await findByAuthUid(request.auth.uid);
+  const user = await getUserByAuthUid(request.auth.uid);
 
   if (!user) {
     throw new HttpsError("not-found", "Usuário não encontrado");

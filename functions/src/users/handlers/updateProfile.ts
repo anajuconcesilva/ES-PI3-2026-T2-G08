@@ -28,8 +28,8 @@ import { onCall, HttpsError } from "firebase-functions/https";
 import { getAuth } from "firebase-admin/auth";
 
 import {
-  findByCPF,
-  findByEmail,
+  getUserByCPF,
+  getUserByEmail,
   updateUser,
 } from "../repositories/userRepository";
 
@@ -61,13 +61,13 @@ export const updateProfile = onCall(async (request) => {
   /**
    * Verifica duplicidade
    */
-  const cpfExists = await findByCPF(cpf);
+  const cpfExists = await getUserByCPF(cpf);
 
   if (cpfExists && cpfExists.authUid !== uid) {
     throw new HttpsError("already-exists", "CPF já cadastrado");
   }
 
-  const emailExists = await findByEmail(email);
+  const emailExists = await getUserByEmail(email);
 
   if (emailExists && emailExists.authUid !== uid) {
     throw new HttpsError("already-exists", "E-mail já cadastrado");

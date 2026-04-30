@@ -224,23 +224,23 @@ export function validateUpdateProfileInput(data: any): UpdateValidationResult {
   const cpf = normalizeCPF(data.cpf);
   const telefone = normalizePhone(data.telefone);
 
-if (!nome || !email || !cpf || !telefone) {
-  return { valid: false, message: "Todos os campos são obrigatórios" };
-}
+  if (!nome || !email || !cpf || !telefone) {
+    return { valid: false, message: "Todos os campos são obrigatórios" };
+  }
 
-if (!validateEmail(email)) {
-  return { valid: false, message: "E-mail inválido" };
-}
+  if (!validateEmail(email)) {
+    return { valid: false, message: "E-mail inválido" };
+  }
 
-if (!validateCPF(cpf)) {
-  return { valid: false, message: "CPF inválido" };
-}
+  if (!validateCPF(cpf)) {
+    return { valid: false, message: "CPF inválido" };
+  }
 
-if (!validatePhone(telefone)) {
-  return { valid: false, message: "Telefone inválido" };
-}
+  if (!validatePhone(telefone)) {
+    return { valid: false, message: "Telefone inválido" };
+  }
 
-return {
+  return {
     valid: true,
     data: { nome, email, cpf, telefone }
   };
