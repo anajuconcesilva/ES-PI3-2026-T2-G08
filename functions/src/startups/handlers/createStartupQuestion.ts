@@ -73,7 +73,9 @@ export const createStartupQuestion = onCall(async (request) => {
     authorEmail: user.email,
     text,
     visibility: visibility as QuestionVisibility,
+    status: "pendente",
     createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
   const questionId = await createQuestion(startupId, question);
