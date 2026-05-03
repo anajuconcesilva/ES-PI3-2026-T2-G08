@@ -51,11 +51,59 @@ MesclaInvest/
 └── README.md  
 ```
 
+## 🔐 Configuração do Firebase
+
+Para executar o projeto corretamente, é necessário configurar o Firebase:
+
+### 1. Criar projeto
+- Acesse o Firebase Console
+- Crie um novo projeto
+
+### 2. Adicionar app Android
+- Clique em "Adicionar app"
+- Informe o nome do pacote (ex: `com.exemplo.app`)
+- Baixe o arquivo `google-services.json`
+
+### 3. Adicionar ao projeto Flutter
+Coloque o arquivo em: android/app/google-services.json
+
+### 4. Ativar serviços no Firebase
+
+Ative os seguintes recursos:
+
+- Authentication → método Email/Senha
+- Firestore Database
+- Cloud Functions
+
+### 5. Configurar regras do Firestore (modo desenvolvimento)
+
+```js
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
 ## 🚀 Como Executar o Projeto
 
 ### Backend
 
-1. Acessar a pasta `/backend`
+1. Acessar a pasta `backend/functions`
 2. Instalar dependências:
    ```bash
    npm install
+3. Fazer Login
+   ```firebase login
+4. Selecionar Projeto
+   ```firebase use --add
+5. Deploy das Funções
+   ```firebase deploy --only functions
+6. Acessar pasta `/frontend`
+7. Instalar Dependências
+   ```flutter pub get
+8. Rodar o app
+```flutter run
