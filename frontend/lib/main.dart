@@ -1,9 +1,14 @@
+//CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
+//RA:25002592
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:mescla_invest_app/screens/telaesqueci.dart';
 import 'package:mescla_invest_app/screens/telarecuperacao.dart';
 import 'package:mescla_invest_app/screens/telaredefinir.dart';
+import 'package:mescla_invest_app/screens/telageral.dart';
+import 'package:mescla_invest_app/screens/telacatalogo.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
@@ -35,6 +40,9 @@ class MyApp extends StatelessWidget {
         '/esqueci': (_) => const TelaEsqueci(),
         '/recuperacao': (_) => const TelaRecuperacao(),
         '/redefinir': (_) => const TelaRedefinir(),
+        '/catalogo': (_) => const TelaCatalogo(),
+        '/geral': (_) => const TelaGeral()
+
       },
     );
   }
