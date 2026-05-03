@@ -21,7 +21,6 @@ class TelaGeral extends StatelessWidget {
           child: Column(
             children: [
 
-              // 🔵 HEADER
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -64,7 +63,6 @@ class TelaGeral extends StatelessWidget {
                     ),
                   ),
 
-                  // 🔥 CARD FLUTUANTE
                   Positioned(
                     bottom: -40,
                     left: 24,
@@ -106,7 +104,6 @@ class TelaGeral extends StatelessWidget {
 
               const SizedBox(height: 70),
 
-              // 🔹 AÇÕES
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Row(
@@ -121,7 +118,6 @@ class TelaGeral extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // 🔹 TÍTULO + VER MAIS
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
@@ -153,7 +149,6 @@ class TelaGeral extends StatelessWidget {
 
               const SizedBox(height: 15),
 
-              // 🔥 CARROSSEL
               SizedBox(
                 height: 180,
                 child: PageView.builder(
@@ -177,7 +172,6 @@ class TelaGeral extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // 🔹 NAVBAR
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 decoration: const BoxDecoration(
@@ -223,7 +217,6 @@ class TelaGeral extends StatelessWidget {
   }
 }
 
-// 🔹 BOTÕES
 class _Action extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -249,7 +242,6 @@ class _Action extends StatelessWidget {
   }
 }
 
-// 🔹 CARD
 class _CardStartup extends StatelessWidget {
   final String imagePath;
 
@@ -269,7 +261,6 @@ class _CardStartup extends StatelessWidget {
   }
 }
 
-// 🔹 NAVBAR ITEM
 class _Nav extends StatelessWidget {
   final IconData icon;
   final String label;

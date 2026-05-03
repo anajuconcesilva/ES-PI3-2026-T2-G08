@@ -45,7 +45,6 @@ class _TelaNovaSenhaState extends State<TelaRedefinir> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
-                        // 🔐 NOVA SENHA
                         const Text(
                           "Nova Senha",
                           style: TextStyle(
