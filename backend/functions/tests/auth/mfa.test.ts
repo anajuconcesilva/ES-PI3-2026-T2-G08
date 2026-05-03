@@ -2,9 +2,9 @@
  * Importa as funções MFA que serão testadas.
  * Cada uma representa uma etapa do sistema de autenticação multifator.
  */
-import { startMfa } from "../src/auth/handlers/startMfa";
-import { verifyMfa } from "../src/auth/handlers/verifyMfa";
-import { disableMfa } from "../src/auth/handlers/disableMfa";
+import { startMfa } from "../../src/auth/handlers/startMfa";
+import { verifyMfa } from "../../src/auth/handlers/verifyMfa";
+import { disableMfa } from "../../src/auth/handlers/disableMfa";
 
 /**
  * Grupo de testes relacionado ao módulo MFA.

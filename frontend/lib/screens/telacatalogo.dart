@@ -1,42 +1,51 @@
-//CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
-//RA:25002592
+// CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
+// RA:25002592
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelaCatalogo extends StatelessWidget {
   const TelaCatalogo({super.key});
-
-  final List<Map<String, String>> startups = const [
-   //STARTUPS
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
+
       body: SafeArea(
         child: Column(
           children: [
+            const SizedBox(height: 12),
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: const [
                   Icon(Icons.arrow_back),
+
                   SizedBox(width: 10),
+
                   Expanded(
-                    child: Text(
-                      "Catálogo de Startups",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Text(
+                        "Catálogo de Startups",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
+
                   Icon(Icons.person, size: 30),
                 ],
               ),
             ),
+
+            const SizedBox(height: 18),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -57,15 +66,42 @@ class TelaCatalogo extends StatelessWidget {
             const SizedBox(height: 20),
 
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: startups.length,
-                itemBuilder: (context, index) {
-                  final s = startups[index];
-                  return _StartupCard(
-                    nome: s["nome"]!,
-                    descricao: s["descricao"]!,
-                    logo: s["logo"]!,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('startups')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (!snapshot.hasData ||
+                      snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text("Nenhuma startup encontrada"),
+                    );
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data =
+                      docs[index].data() as Map<String, dynamic>;
+
+                      return _StartupCard(
+                        nome: data["name"] ?? "Sem nome",
+                        descricao:
+                        data["shortDescription"] ?? "Sem descrição",
+                        logoUrl: data["coverImageUrl"],
+                        stage: data["stage"] ?? "desconhecido",
+                      );
+                    },
                   );
                 },
               ),
@@ -82,13 +118,41 @@ class TelaCatalogo extends StatelessWidget {
 class _StartupCard extends StatelessWidget {
   final String nome;
   final String descricao;
-  final String logo;
+  final String? logoUrl;
+  final String stage;
 
   const _StartupCard({
     required this.nome,
     required this.descricao,
-    required this.logo,
+    this.logoUrl,
+    required this.stage,
   });
+
+  String getStageLabel() {
+    switch (stage) {
+      case "nova":
+        return "Nova";
+      case "em_operacao":
+        return "Em operação";
+      case "em_expansao":
+        return "Em expansão";
+      default:
+        return "Desconhecido";
+    }
+  }
+
+  Color getStageColor() {
+    switch (stage) {
+      case "nova":
+        return Colors.blue;
+      case "em_operacao":
+        return Colors.green;
+      case "em_expansao":
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +173,21 @@ class _StartupCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Image.asset(logo, width: 70, height: 70),
+          logoUrl != null && logoUrl!.isNotEmpty
+              ? ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              logoUrl!,
+              width: 70,
+              height: 70,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.broken_image, size: 70);
+              },
+            ),
+          )
+              : const Icon(Icons.image, size: 70),
+
           const SizedBox(width: 12),
 
           Expanded(
@@ -122,24 +200,48 @@ class _StartupCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   descricao,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12),
                 ),
+
+                const SizedBox(height: 8),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: getStageColor().withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    getStageLabel(),
+                    style: TextStyle(
+                      color: getStageColor(),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 10),
+
                 SizedBox(
                   width: 120,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1482C7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      foregroundColor: Colors.white,
                     ),
                     onPressed: () {},
                     child: const Text("Conhecer"),
+
                   ),
                 )
               ],
@@ -150,7 +252,6 @@ class _StartupCard extends StatelessWidget {
     );
   }
 }
-
 class _BottomNav extends StatelessWidget {
   const _BottomNav();
 
@@ -181,7 +282,11 @@ class _Nav extends StatelessWidget {
   final String label;
   final bool active;
 
-  const _Nav({required this.icon, required this.label, this.active = false});
+  const _Nav({
+    required this.icon,
+    required this.label,
+    this.active = false,
+  });
 
   @override
   Widget build(BuildContext context) {

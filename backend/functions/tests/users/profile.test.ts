@@ -2,8 +2,8 @@
  * Importa as funções relacionadas ao perfil do usuário.
  * Essas funções permitem consultar e atualizar dados cadastrais.
  */
-import { getProfile } from "../src/users/handlers/getProfile";
-import { updateProfile } from "../src/users/handlers/updateProfile";
+import { getProfile } from "../../src/users/handlers/getProfile";
+import { updateProfile } from "../../src/users/handlers/updateProfile";
 
 /**
  * Grupo de testes do módulo de Perfil.

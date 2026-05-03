@@ -9,7 +9,7 @@ import {
   validatePassword,
   normalizeString,
   onlyNumbers,
-} from "../src/users/shared/validators";
+} from "../../src/users/shared/validators";
 
 describe("Validators", () => {
 

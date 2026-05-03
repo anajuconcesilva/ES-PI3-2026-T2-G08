@@ -3,7 +3,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
 import 'package:mescla_invest_app/screens/telaesqueci.dart';
 import 'package:mescla_invest_app/screens/telarecuperacao.dart';
 import 'package:mescla_invest_app/screens/telaredefinir.dart';
@@ -15,6 +14,7 @@ import 'screens/telacadastro.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp();
 
   runApp(const MyApp());
@@ -29,10 +29,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Mescla Invest',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1482C7)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1482C7),
+        ),
         useMaterial3: true,
       ),
-      initialRoute: '/inicio',
+
+      // 🔥 TELA INICIAL
+      initialRoute: '/catalogo',
+
       routes: {
         '/inicio': (_) => const TelaInicio(),
         '/login': (_) => const TelaLogin(),
@@ -41,8 +46,7 @@ class MyApp extends StatelessWidget {
         '/recuperacao': (_) => const TelaRecuperacao(),
         '/redefinir': (_) => const TelaRedefinir(),
         '/catalogo': (_) => const TelaCatalogo(),
-        '/geral': (_) => const TelaGeral()
-
+        '/geral': (_) => const TelaGeral(),
       },
     );
   }
