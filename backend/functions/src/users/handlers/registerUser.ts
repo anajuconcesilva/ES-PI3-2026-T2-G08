@@ -33,6 +33,9 @@ import { validateRegisterInput } from "../shared/validators";
  * API de cadastro de usuário (Callable)
  */
 export const registerUser = onCall(async (request) => {
+console.log("🔥 REGISTER USER FOI CHAMADO");
+console.log("DATA:", request.data);
+console.log("AUTH:", request.auth);
   try {
     // =========================
     // 1. VALIDAÇÃO
