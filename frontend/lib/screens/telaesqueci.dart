@@ -1,10 +1,64 @@
-//CÓDIGO FEITO PELA ALUNA: Ana Júlia Conceição da Silva
-//RA: 25002592
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class TelaEsqueci extends StatelessWidget {
+class TelaEsqueci extends StatefulWidget {
   const TelaEsqueci({super.key});
+
+  @override
+  State<TelaEsqueci> createState() => _TelaEsqueciState();
+}
+
+class _TelaEsqueciState extends State<TelaEsqueci> {
+  final emailController = TextEditingController();
+  bool isLoading = false;
+
+  Future<void> enviarEmail() async {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Digite um email válido")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Email de recuperação enviado! Verifique sua caixa de entrada."),
+        ),
+      );
+
+      Navigator.pop(context); // volta pro login
+
+    } on FirebaseAuthException catch (e) {
+      String msg = "Erro ao enviar email";
+
+      if (e.code == 'user-not-found') {
+        msg = "Usuário não encontrado";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro inesperado: $e")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +71,7 @@ class TelaEsqueci extends StatelessWidget {
 
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(25), // 👈 padding ajustado
+                padding: const EdgeInsets.all(25),
                 decoration: const BoxDecoration(
                   color: Color(0xFFE8E8E8),
                   borderRadius: BorderRadius.only(
@@ -42,7 +96,7 @@ class TelaEsqueci extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        const SizedBox(width: 48), // mantém centralizado
+                        const SizedBox(width: 48),
                       ],
                     ),
 
@@ -58,8 +112,6 @@ class TelaEsqueci extends StatelessWidget {
                             Color(0xFF203D74),
                             Color(0xFFB9DCE6),
                           ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
                         ),
                       ),
                       child: Padding(
@@ -71,7 +123,7 @@ class TelaEsqueci extends StatelessWidget {
                     const SizedBox(height: 35),
 
                     const Text(
-                      "Digite seu email e enviaremos o código\npara recuperação de senha.",
+                      "Digite seu email e enviaremos um link\npara redefinir sua senha.",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -79,6 +131,7 @@ class TelaEsqueci extends StatelessWidget {
                     const SizedBox(height: 40),
 
                     TextField(
+                      controller: emailController,
                       decoration: InputDecoration(
                         hintText: "exemplo@mesclainvest.com",
                         filled: true,
@@ -95,9 +148,7 @@ class TelaEsqueci extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/recuperacao');
-                        },
+                        onPressed: isLoading ? null : enviarEmail,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1482C7),
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -105,7 +156,9 @@ class TelaEsqueci extends StatelessWidget {
                             borderRadius: BorderRadius.circular(25),
                           ),
                         ),
-                        child: const Text(
+                        child: isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
                           "Enviar Instruções",
                           style: TextStyle(
                             color: Colors.white,

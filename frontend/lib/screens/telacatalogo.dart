@@ -17,16 +17,20 @@ class TelaCatalogo extends StatelessWidget {
           children: [
             const SizedBox(height: 12),
 
+            // HEADER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: const [
-                  Icon(Icons.arrow_back),
+                children: [
+                  // VOLTAR
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
 
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-                  Expanded(
+                  const Expanded(
                     child: Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
@@ -40,13 +44,14 @@ class TelaCatalogo extends StatelessWidget {
                     ),
                   ),
 
-                  Icon(Icons.person, size: 30),
+                  const Icon(Icons.person, size: 30),
                 ],
               ),
             ),
 
             const SizedBox(height: 18),
 
+            // CAMPO DE BUSCA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
@@ -65,28 +70,40 @@ class TelaCatalogo extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // LISTA DE STARTUPS
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('startups')
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
+
+                  // DEBUG REAL DO ERRO
+                  if (snapshot.hasError) {
+                    print("ERRO FIRESTORE: ${snapshot.error}");
+                    return Center(
+                      child: Text("Erro: ${snapshot.error}"),
+                    );
+                  }
+
+                  // LOADING
+                  if (snapshot.connectionState == ConnectionState.waiting ||
+                      !snapshot.hasData) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
 
-                  if (!snapshot.hasData ||
-                      snapshot.data!.docs.isEmpty) {
+                  final docs = snapshot.data!.docs;
+
+                  // LISTA VAZIA REAL
+                  if (docs.isEmpty) {
                     return const Center(
                       child: Text("Nenhuma startup encontrada"),
                     );
                   }
 
-                  final docs = snapshot.data!.docs;
-
+                  // LISTA COM DADOS
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: docs.length,
@@ -115,6 +132,7 @@ class TelaCatalogo extends StatelessWidget {
   }
 }
 
+// CARD
 class _StartupCard extends StatelessWidget {
   final String nome;
   final String descricao;
@@ -173,6 +191,7 @@ class _StartupCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // IMAGEM
           logoUrl != null && logoUrl!.isNotEmpty
               ? ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -190,15 +209,14 @@ class _StartupCard extends StatelessWidget {
 
           const SizedBox(width: 12),
 
+          // INFOS
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   nome,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 6),
@@ -211,11 +229,10 @@ class _StartupCard extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
+                // TAG
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: getStageColor().withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -232,6 +249,7 @@ class _StartupCard extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
+                // BOTÃO
                 SizedBox(
                   width: 120,
                   child: ElevatedButton(
@@ -241,7 +259,6 @@ class _StartupCard extends StatelessWidget {
                     ),
                     onPressed: () {},
                     child: const Text("Conhecer"),
-
                   ),
                 )
               ],
@@ -252,6 +269,8 @@ class _StartupCard extends StatelessWidget {
     );
   }
 }
+
+// NAVBAR
 class _BottomNav extends StatelessWidget {
   const _BottomNav();
 
@@ -263,47 +282,67 @@ class _BottomNav extends StatelessWidget {
         color: Color(0xFFE8E8E8),
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _Nav(icon: Icons.home, label: "Início"),
-          _Nav(icon: Icons.emoji_events, label: "Startups", active: true),
-          _Nav(icon: Icons.attach_money, label: "Carteira"),
-          _Nav(icon: Icons.show_chart, label: "Valorização"),
-          _Nav(icon: Icons.store, label: "Negociar"),
+
+          // INÍCIO -> VAI PARA TELA GERAL
+          _Nav(
+            icon: Icons.home,
+            label: "Início",
+            onTap: () {
+              Navigator.pushNamed(context, '/geral');
+            },
+          ),
+
+          const _Nav(
+            icon: Icons.emoji_events,
+            label: "Startups",
+            active: true,
+          ),
+
+          const _Nav(icon: Icons.attach_money, label: "Carteira"),
+          const _Nav(icon: Icons.show_chart, label: "Valorização"),
+          const _Nav(icon: Icons.store, label: "Negociar"),
         ],
       ),
     );
   }
 }
 
+// ITEM NAV
 class _Nav extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
   const _Nav({
     required this.icon,
     required this.label,
     this.active = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: active ? const Color(0xFF1482C7) : Colors.black,
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(
+            icon,
             color: active ? const Color(0xFF1482C7) : Colors.black,
           ),
-        )
-      ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: active ? const Color(0xFF1482C7) : Colors.black,
+            ),
+          )
+        ],
+      ),
     );
   }
 }

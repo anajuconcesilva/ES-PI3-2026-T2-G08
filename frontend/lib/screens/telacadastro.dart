@@ -1,7 +1,9 @@
 // CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
-// RA: 25002592
+//RA: 25002592
+
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
@@ -25,39 +27,59 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final confirmController = TextEditingController();
 
   Future<void> cadastrarUsuario() async {
-    // 1. Validação local no Flutter
     if (!_formKey.currentState!.validate()) return;
+
+    if (senhaController.text != confirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("As senhas não coincidem")),
+      );
+      return;
+    }
 
     setState(() => isLoading = true);
 
     try {
-      // Chamada da função 'registerUser' que o Lucas exportou no backend
-      final callable = FirebaseFunctions.instance.httpsCallable('registerUser');
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text.trim(),
+      );
 
-      final response = await callable.call({
+      final uid = cred.user!.uid;
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         "nome": nomeController.text.trim(),
         "email": emailController.text.trim(),
-        "cpf": cpfController.text.trim().replaceAll(RegExp(r'[^0-9]'), ''), // Limpa o CPF
+        "cpf": cpfController.text.trim(),
         "telefone": telefoneController.text.trim(),
-        "senha": senhaController.text.trim(),
+        "saldo": 0,
+        "createdAt": FieldValue.serverTimestamp(),
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.data['message'] ?? "Sucesso!")),
-        );
-        Navigator.pushNamed(context, '/login');
-      }
-    } on FirebaseFunctionsException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro no servidor: ${e.message}")),
+        const SnackBar(content: Text("Usuário cadastrado com sucesso")),
       );
+
+      Navigator.pushNamed(context, '/login');
+
+    } on FirebaseAuthException catch (e) {
+      String msg = "Erro ao cadastrar";
+
+      if (e.code == 'email-already-in-use') {
+        msg = "E-mail já cadastrado";
+      } else if (e.code == 'weak-password') {
+        msg = "Senha muito fraca";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro inesperado: $e")),
+        SnackBar(content: Text("Erro: $e")),
       );
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      setState(() => isLoading = false);
     }
   }
 
@@ -84,6 +106,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
               const SizedBox(height: 30),
               _buildHeader(),
               const SizedBox(height: 20),
+
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -97,18 +120,22 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
+
                         _campo("Nome Completo", "Ana Júlia", nomeController, (v) {
                           if (v == null || v.isEmpty) return "Digite seu nome";
                           return null;
                         }),
-                        _campo("Email", "exemplo@mesclainvest.com", emailController, (v) {
+
+                        _campo("Email", "exemplo@email.com", emailController, (v) {
                           if (v == null || !v.contains('@')) return "E-mail inválido";
                           return null;
                         }),
+
                         _campo("CPF", "000.000.000-00", cpfController, (v) {
                           if (v == null || v.isEmpty) return "Digite seu CPF";
                           return null;
                         }),
+
                         _campo("Telefone", "(19)999999999", telefoneController, null),
 
                         _campoSenha(
@@ -123,7 +150,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                         ),
 
                         _campoSenha(
-                          "Confirme sua senha",
+                          "Confirmar Senha",
                           obscureConfirm,
                           confirmController,
                               () => setState(() => obscureConfirm = !obscureConfirm),
@@ -142,26 +169,47 @@ class _TelaCadastroState extends State<TelaCadastro> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1482C7),
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
                             ),
                             child: isLoading
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text("Cadastre-se", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text(
+                              "Cadastre-se",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
+
                         const SizedBox(height: 15),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Text("Já possui uma conta? "),
                             InkWell(
                               onTap: () => Navigator.pushNamed(context, '/login'),
-                              child: const Text("Login", style: TextStyle(color: Color(0xFF1482C7), fontWeight: FontWeight.bold)),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Color(0xFF1482C7),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 25),
-                        const Text("© 2026 MesclaInvest", style: TextStyle(color: Colors.grey)),
+
+                        const Text(
+                          "© 2026 MesclaInvest",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
@@ -179,9 +227,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back),
+          ),
           const Spacer(),
-          const Text("Crie sua conta", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text(
+            "Crie sua conta",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const Spacer(),
           const SizedBox(width: 48),
         ],
@@ -204,8 +258,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
               hintText: hint,
               filled: true,
               fillColor: const Color(0xFFD6D5D5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-              errorStyle: const TextStyle(color: Colors.red),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ],
@@ -228,7 +284,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFD6D5D5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: toggle,

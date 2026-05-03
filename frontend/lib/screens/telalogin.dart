@@ -2,6 +2,7 @@
 //RA: 25002592
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -12,9 +13,55 @@ class TelaLogin extends StatefulWidget {
 
 class _TelaLoginState extends State<TelaLogin> {
   bool obscureSenha = true;
+  bool isLoading = false;
 
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
+
+  Future<void> fazerLogin() async {
+    setState(() => isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text.trim(),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login realizado com sucesso")),
+      );
+
+      Navigator.pushReplacementNamed(context, '/geral');
+
+    } on FirebaseAuthException catch (e) {
+      String msg = "Erro ao fazer login";
+
+      if (e.code == 'user-not-found') {
+        msg = "Usuário não encontrado";
+      } else if (e.code == 'wrong-password') {
+        msg = "Senha incorreta";
+      } else if (e.code == 'invalid-email') {
+        msg = "Email inválido";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro: $e")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    senhaController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +157,7 @@ class _TelaLoginState extends State<TelaLogin> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: isLoading ? null : fazerLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1482C7),
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -118,7 +165,16 @@ class _TelaLoginState extends State<TelaLogin> {
                                 borderRadius: BorderRadius.circular(25),
                               ),
                             ),
-                            child: const Text(
+                            child: isLoading
+                                ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                                : const Text(
                               "Entrar",
                               style: TextStyle(
                                 color: Colors.white,
