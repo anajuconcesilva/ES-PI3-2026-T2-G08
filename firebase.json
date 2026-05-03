@@ -7,7 +7,9 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "host": "0.0.0.0",
+      "port": 5001,
+      "source": "backend/functions",
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
@@ -24,13 +26,17 @@
   ],
   "emulators": {
     "functions": {
-      "port": 5001
+      "host": "0.0.0.0",
+      "port": 9099
     },
     "firestore": {
+      "host": "0.0.0.0",
       "port": 8080
     },
     "ui": {
-      "enabled": true
+      "host": "0.0.0.0",
+      "enabled": true,
+      "port": 4000
     },
     "singleProjectMode": true
   }

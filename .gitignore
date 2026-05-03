@@ -72,3 +72,13 @@ node_modules/
 .metadata
 .agents/
 cliente_test/
+
+# Ignorar builds do Flutter/Android
+**/build/
+frontend/build/
+
+# Ignorar arquivos temporários do Dart/Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/

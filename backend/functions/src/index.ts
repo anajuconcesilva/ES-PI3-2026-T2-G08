@@ -1,3 +1,5 @@
+import { initializeApp } from "firebase-admin/app";
+initializeApp();
 import {setGlobalOptions} from "firebase-functions";
 
 setGlobalOptions({maxInstances: 10});
