@@ -98,13 +98,13 @@ service cloud.firestore {
    ```bash
    npm install
 3. Fazer Login
-   ```firebase login
+   ```firebase login```
 4. Selecionar Projeto
-   ```firebase use --add
+   ```firebase use --add```
 5. Deploy das Funções
-   ```firebase deploy --only functions
-6. Acessar pasta `/frontend`
-7. Instalar Dependências
-   ```flutter pub get
-8. Rodar o app
-```flutter run
+   ```firebase deploy --only functions```
+7. Acessar pasta `/frontend`
+8. Instalar Dependências
+   ```flutter pub get```
+9. Rodar o app
+```flutter run```
