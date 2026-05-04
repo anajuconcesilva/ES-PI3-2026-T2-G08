@@ -6,7 +6,6 @@ import '../midia_model.dart';
 import '../midia_server.dart';
 
 class TelaMidiaCompleta extends StatefulWidget {
-  // AJUSTE: Adicionado o parâmetro startupId para carregar os dados certos
   final String startupId;
 
   const TelaMidiaCompleta({super.key, required this.startupId});
@@ -21,7 +20,6 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
   @override
   void initState() {
     super.initState();
-    // AJUSTE: Agora usa o ID real da startup em vez de um texto fixo
     futureMidias = MidiaService.fetchMidias(widget.startupId);
   }
 
@@ -38,228 +36,261 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        centerTitle: true,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.canPop(context)) Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          "Detalhes da Startup",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Color(0xFFE8E8E8),
-              child: Icon(Icons.person, color: Colors.black),
-            ),
-          ),
-        ],
-      ),
-      body: FutureBuilder<List<Midia>>(
-        future: futureMidias,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(context),
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  "Erro ao carregar mídias:\n${snapshot.error}",
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
+            Expanded(
+              child: FutureBuilder<List<Midia>>(
+                future: futureMidias,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-          // AJUSTE: Verificação de segurança para dados nulos
-          final midias = snapshot.data ?? [];
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          "Erro ao carregar mídias:\n${snapshot.error}",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
 
-          if (midias.isEmpty) {
-            return const Center(child: Text("Nenhuma mídia encontrada"));
-          }
+                  final midias = snapshot.data ?? [];
 
-          final pdfs = midias.where((m) => m.tipo == "pdf").toList();
-          final videos = midias.where((m) => m.tipo == "video").toList();
-          final imagens = midias.where((m) => m.tipo == "imagem").toList();
+                  if (midias.isEmpty) {
+                    return const Center(child: Text("Nenhuma mídia encontrada"));
+                  }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
-                border: Border.all(color: azul, width: 1.5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Center(
-                    child: Text("Mídia", style: TextStyle(fontSize: 16)),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Mídia e Documentos",
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 20),
+                  final pdfs = midias.where((m) => m.tipo == "pdf").toList();
+                  final videos = midias.where((m) => m.tipo == "video").toList();
+                  final imagens = midias.where((m) => m.tipo == "imagem").toList();
 
-                  // ── PDFs ──
-                  if (pdfs.isNotEmpty) ...[
-                    const Text("Documentos", style: TextStyle(fontSize: 22)),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: pdfs.map((m) {
-                        return GestureDetector(
-                          onTap: () => abrirLink(m.url),
-                          child: SizedBox(
-                            width: 75,
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8E8E8),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: azul, width: 1.5),
+                      ),
+                      child: Column(
+                        children: [
+
+                          // 🔵 BARRA AZUL IGUAL À OUTRA TELA
+                          _buildTabMidia(context),
+
+                          Padding(
+                            padding: const EdgeInsets.all(16),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.insert_drive_file,
-                                  color: azul,
-                                  size: 42,
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  m.titulo,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+
+                                const SizedBox(height: 10),
+
+                                // ── PDFs ──
+                                if (pdfs.isNotEmpty) ...[
+                                  const Text(
+                                    "Documentos",
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  Wrap(
+                                    spacing: 20,
+                                    runSpacing: 10,
+                                    children: pdfs.map((m) {
+                                      return GestureDetector(
+                                        onTap: () => abrirLink(m.url),
+                                        child: SizedBox(
+                                          width: 80,
+                                          child: Column(
+                                            children: [
+                                              const Icon(Icons.insert_drive_file, color: azul, size: 40),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                m.titulo,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+
+                                  const SizedBox(height: 25),
+                                ],
+
+                                // ── Vídeos ──
+                                if (videos.isNotEmpty) ...[
+                                  const Text(
+                                    "Vídeos",
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  ...videos.map((m) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: VideoWidget(url: m.url),
+                                  )),
+
+                                  const SizedBox(height: 10),
+                                ],
+
+                                // ── Galeria ──
+                                if (imagens.isNotEmpty) ...[
+                                  const Text(
+                                    "Galeria",
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: imagens.length,
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 0.95,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final img = imagens[index];
+
+                                      return Card(
+                                        elevation: 3,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Column(
+                                          children: [
+                                            Expanded(
+                                              child: Image.network(
+                                                img.url,
+                                                width: double.infinity,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return const Center(
+                                                    child: Column(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Icon(Icons.broken_image, size: 40, color: Colors.red),
+                                                        SizedBox(height: 4),
+                                                        Text("Erro ao carregar", style: TextStyle(fontSize: 10)),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                loadingBuilder: (context, child, loadingProgress) {
+                                                  if (loadingProgress == null) return child;
+                                                  return const Center(child: CircularProgressIndicator());
+                                                },
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(8),
+                                              child: Text(
+                                                img.titulo,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ],
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-
-                  // ── Vídeos ──
-                  if (videos.isNotEmpty) ...[
-                    const Text("Vídeos", style: TextStyle(fontSize: 22)),
-                    const SizedBox(height: 10),
-                    ...videos.map(
-                          (m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: VideoWidget(url: m.url),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // ── Galeria ──
-                  if (imagens.isNotEmpty) ...[
-                    const Text("Galeria", style: TextStyle(fontSize: 24)),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: imagens.length,
-                      gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.95,
-                      ),
-                      itemBuilder: (context, index) {
-                        final img = imagens[index];
-
-                        return Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Image.network(
-                                  img.url,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.broken_image,
-                                              size: 40, color: Colors.red),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            "Erro ao carregar",
-                                            style: TextStyle(fontSize: 10),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  },
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Text(
-                                  img.titulo,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ],
+                  );
+                },
               ),
             ),
-          );
-        },
+
+            _buildBottomNav(),
+          ],
+        ),
       ),
-      // BottomNavigationBar mantido conforme seu original
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: azul,
-        unselectedItemColor: Colors.black54,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 28), label: "Início"),
-          BottomNavigationBarItem(icon: Icon(Icons.business, size: 28), label: "Startups"),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet, size: 28), label: "Carteira"),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart, size: 28), label: "Valorização"),
-          BottomNavigationBarItem(icon: Icon(Icons.store, size: 28), label: "Negociar"),
+    );
+  }
+
+  // 🔝 HEADER
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            "Detalhes da Startup",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const Icon(Icons.person, size: 35),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabMidia(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+      decoration: BoxDecoration(
+        color: const Color(0xFFBDD7EE),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        border: Border.all(color: const Color(0xFF1482C7)),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Mídia e Documentos",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Icon(Icons.arrow_forward),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: const [
+          _NavItem(icon: Icons.home, label: "Início"),
+          _NavItem(icon: Icons.emoji_events, label: "Startups", active: true),
+          _NavItem(icon: Icons.wallet, label: "Carteira"),
+          _NavItem(icon: Icons.show_chart, label: "Valorização"),
+          _NavItem(icon: Icons.store, label: "Negociar"),
         ],
       ),
     );
   }
 }
-
 
 class VideoWidget extends StatefulWidget {
   final String url;
@@ -292,7 +323,9 @@ class _VideoWidgetState extends State<VideoWidget> {
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: AspectRatio(
-            aspectRatio: controller.value.aspectRatio,
+            aspectRatio: controller.value.aspectRatio == 0
+                ? 16 / 9
+                : controller.value.aspectRatio,
             child: VideoPlayer(controller),
           ),
         ),
@@ -316,5 +349,34 @@ class _VideoWidgetState extends State<VideoWidget> {
   void dispose() {
     controller.dispose();
     super.dispose();
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: active ? const Color(0xFF1482C7) : Colors.black,
+          ),
+        ),
+      ],
+    );
   }
 }

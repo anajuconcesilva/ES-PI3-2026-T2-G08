@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'tela_societario.dart'; // Certifique-se que este arquivo existe
+import 'tela_societario.dart';
 
 class TelaDetalhesInformaEs extends StatefulWidget {
   final String startupId;
@@ -54,12 +54,10 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
                         Text(descricaoCurta, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
                         const SizedBox(height: 25),
 
-                        // RESTAURADO: Card com Comprar e Vender
                         _buildTokenCard(),
 
                         const SizedBox(height: 25),
 
-                        // MANTIDO: Card de Informações com a Seta para Societário
                         _buildInfoCard(sumario, widget.startupId),
 
                         const SizedBox(height: 20),
@@ -67,7 +65,6 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
                     ),
                   ),
                 ),
-                // RESTAURADO: Barra de Navegação Inferior
                 const _BottomNav(),
               ],
             );
@@ -120,7 +117,6 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
     );
   }
 
-  // FUNÇÃO RESTAURADA COM OS DOIS BOTÕES
   Widget _buildTokenCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -143,7 +139,7 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("0,00", style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold)),
-              _actionButton("Vender Tokens", Colors.red.shade700),
+              _actionButton("Vender Tokens", Colors.red),
             ],
           ),
         ],
@@ -167,7 +163,6 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
     );
   }
 
-  // CARD DE INFORMAÇÕES COM A SETA
   Widget _buildInfoCard(String sumario, String id) {
     return Container(
       width: double.infinity,
@@ -181,18 +176,23 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => TelaSocietario(startupId: id)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TelaSocietario(startupId: id),
+                ),
+              );
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              decoration: const BoxDecoration(
-                color: Color(0xFFDBD9D9),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                border: Border(bottom: BorderSide(color: Color(0xFF1482C7))),
+              decoration: BoxDecoration(
+                color: const Color(0xFFBDD7EE), // 🔵 AGORA PADRÃO
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                border: Border.all(color: const Color(0xFF1482C7)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text("Informações", style: TextStyle(fontWeight: FontWeight.bold)),
                   Icon(Icons.arrow_forward),
                 ],
@@ -216,9 +216,9 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
   }
 }
 
-// BARRA DE NAVEGAÇÃO RESTAURADA
 class _BottomNav extends StatelessWidget {
   const _BottomNav();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -245,14 +245,22 @@ class _NavIcon extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+
   const _NavIcon({required this.icon, required this.label, this.active = false});
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
-        Text(label, style: TextStyle(fontSize: 10, color: active ? const Color(0xFF1482C7) : Colors.black)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: active ? const Color(0xFF1482C7) : Colors.black,
+          ),
+        ),
       ],
     );
   }

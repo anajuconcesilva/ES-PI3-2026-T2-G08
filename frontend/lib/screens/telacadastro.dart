@@ -121,7 +121,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                     child: Column(
                       children: [
 
-                        _campo("Nome Completo", "Ana Júlia", nomeController, (v) {
+                        _campo("Nome Completo", "Nome Sobrenome", nomeController, (v) {
                           if (v == null || v.isEmpty) return "Digite seu nome";
                           return null;
                         }),
