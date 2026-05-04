@@ -4,8 +4,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class TelaCatalogo extends StatelessWidget {
+class TelaCatalogo extends StatefulWidget {
   const TelaCatalogo({super.key});
+
+  @override
+  State<TelaCatalogo> createState() => _TelaCatalogoState();
+}
+
+class _TelaCatalogoState extends State<TelaCatalogo> {
+
+  String filtroStage = "todos";
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +25,10 @@ class TelaCatalogo extends StatelessWidget {
           children: [
             const SizedBox(height: 12),
 
-            // HEADER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  // VOLTAR
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),
@@ -51,18 +57,51 @@ class TelaCatalogo extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // CAMPO DE BUSCA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Pesquise",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: const Color(0xFFDBD9D9),
-                  border: OutlineInputBorder(
+              child: GestureDetector(
+                onTap: () async {
+
+                  final selecionado = await showModalBottomSheet<String>(
+                    context: context,
+                    builder: (context) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _opcaoFiltro("todos", "Todos"),
+                          _opcaoFiltro("nova", "Nova"),
+                          _opcaoFiltro("em_operacao", "Em operação"),
+                          _opcaoFiltro("em_expansao", "Em expansão"),
+                        ],
+                      );
+                    },
+                  );
+
+                  if (selecionado != null) {
+                    setState(() {
+                      filtroStage = selecionado;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDBD9D9),
                     borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.filter_list),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          filtroStage == "todos"
+                              ? "Filtrar por estágio"
+                              : filtroStage.replaceAll("_", " "),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -70,15 +109,20 @@ class TelaCatalogo extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // LISTA DE STARTUPS
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
+
+                stream: filtroStage == "todos"
+                    ? FirebaseFirestore.instance
                     .collection('startups')
+                    .snapshots()
+                    : FirebaseFirestore.instance
+                    .collection('startups')
+                    .where('stage', isEqualTo: filtroStage)
                     .snapshots(),
+
                 builder: (context, snapshot) {
 
-                  // DEBUG REAL DO ERRO
                   if (snapshot.hasError) {
                     print("ERRO FIRESTORE: ${snapshot.error}");
                     return Center(
@@ -86,7 +130,6 @@ class TelaCatalogo extends StatelessWidget {
                     );
                   }
 
-                  // LOADING
                   if (snapshot.connectionState == ConnectionState.waiting ||
                       !snapshot.hasData) {
                     return const Center(
@@ -96,25 +139,23 @@ class TelaCatalogo extends StatelessWidget {
 
                   final docs = snapshot.data!.docs;
 
-                  // LISTA VAZIA REAL
                   if (docs.isEmpty) {
                     return const Center(
                       child: Text("Nenhuma startup encontrada"),
                     );
                   }
 
-                  // LISTA COM DADOS
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
+
                       final data =
                       docs[index].data() as Map<String, dynamic>;
 
                       return _StartupCard(
                         nome: data["name"] ?? "Sem nome",
-                        descricao:
-                        data["shortDescription"] ?? "Sem descrição",
+                        descricao: data["shortDescription"] ?? "Sem descrição",
                         logoUrl: data["coverImageUrl"],
                         stage: data["stage"] ?? "desconhecido",
                       );
@@ -130,9 +171,17 @@ class TelaCatalogo extends StatelessWidget {
       ),
     );
   }
+
+  Widget _opcaoFiltro(String value, String label) {
+    return ListTile(
+      title: Text(label),
+      onTap: () {
+        Navigator.pop(context, value);
+      },
+    );
+  }
 }
 
-// CARD
 class _StartupCard extends StatelessWidget {
   final String nome;
   final String descricao;
@@ -191,7 +240,6 @@ class _StartupCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // IMAGEM
           logoUrl != null && logoUrl!.isNotEmpty
               ? ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -209,7 +257,6 @@ class _StartupCard extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // INFOS
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -229,7 +276,6 @@ class _StartupCard extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // TAG
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
@@ -249,7 +295,6 @@ class _StartupCard extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                // BOTÃO
                 SizedBox(
                   width: 120,
                   child: ElevatedButton(
@@ -270,7 +315,6 @@ class _StartupCard extends StatelessWidget {
   }
 }
 
-// NAVBAR
 class _BottomNav extends StatelessWidget {
   const _BottomNav();
 
@@ -285,8 +329,6 @@ class _BottomNav extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-
-          // INÍCIO -> VAI PARA TELA GERAL
           _Nav(
             icon: Icons.home,
             label: "Início",
@@ -294,13 +336,11 @@ class _BottomNav extends StatelessWidget {
               Navigator.pushNamed(context, '/geral');
             },
           ),
-
           const _Nav(
             icon: Icons.emoji_events,
             label: "Startups",
             active: true,
           ),
-
           const _Nav(icon: Icons.attach_money, label: "Carteira"),
           const _Nav(icon: Icons.show_chart, label: "Valorização"),
           const _Nav(icon: Icons.store, label: "Negociar"),
@@ -310,7 +350,6 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-// ITEM NAV
 class _Nav extends StatelessWidget {
   final IconData icon;
   final String label;
