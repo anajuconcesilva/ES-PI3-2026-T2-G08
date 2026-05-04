@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // 3. Define a sua tela de detalhes como a tela inicial
-      home: const TelaDetalhesInformaEs(),
+      home: const TelaDetalhesInformaEs(startupId: '',),
     );
   }
 }
