@@ -87,6 +87,7 @@ service cloud.firestore {
     }
   }
 }
+```
 
 ## 🚀 Como Executar o Projeto
 
