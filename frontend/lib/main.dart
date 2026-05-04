@@ -46,6 +46,7 @@ class MyApp extends StatelessWidget {
         '/redefinir': (_) => const TelaRedefinir(),
         '/catalogo': (_) => const TelaCatalogo(),
         '/geral': (_) => const TelaGeral(),
+
       },
     );
   }

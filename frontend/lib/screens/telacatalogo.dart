@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'tela_detalhes.dart';
 
 class TelaCatalogo extends StatefulWidget {
   const TelaCatalogo({super.key});
@@ -122,7 +123,6 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     .snapshots(),
 
                 builder: (context, snapshot) {
-
                   if (snapshot.hasError) {
                     print("ERRO FIRESTORE: ${snapshot.error}");
                     return Center(
@@ -149,7 +149,6 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
-
                       final data =
                       docs[index].data() as Map<String, dynamic>;
 
@@ -158,13 +157,25 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                         descricao: data["shortDescription"] ?? "Sem descrição",
                         logoUrl: data["coverImageUrl"],
                         stage: data["stage"] ?? "desconhecido",
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TelaDetalhesInformaEs(
+                                    startupId: docs[index]
+                                        .id, // Passa o ID único da startup
+
+                                  ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
-                },
+                }
               ),
             ),
-
             const _BottomNav(),
           ],
         ),
@@ -187,12 +198,14 @@ class _StartupCard extends StatelessWidget {
   final String descricao;
   final String? logoUrl;
   final String stage;
+  final VoidCallback onPressed;
 
   const _StartupCard({
     required this.nome,
     required this.descricao,
     this.logoUrl,
     required this.stage,
+    required this.onPressed,
   });
 
   String getStageLabel() {
@@ -302,7 +315,7 @@ class _StartupCard extends StatelessWidget {
                       backgroundColor: const Color(0xFF1482C7),
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () {},
+                    onPressed: onPressed,
                     child: const Text("Conhecer"),
                   ),
                 )
