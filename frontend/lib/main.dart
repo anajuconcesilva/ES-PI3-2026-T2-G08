@@ -8,14 +8,21 @@ import 'package:mescla_invest_app/screens/telarecuperacao.dart';
 import 'package:mescla_invest_app/screens/telaredefinir.dart';
 import 'package:mescla_invest_app/screens/telageral.dart';
 import 'package:mescla_invest_app/screens/telacatalogo.dart';
-import 'package:mescla_invest_app/screens/tela_perguntas.dart'; // ← adiciona
+import 'package:mescla_invest_app/screens/perfil.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  try {
+    await Firebase.initializeApp();
+    print("✅ FIREBASE OK");
+  } catch (e) {
+    print("❌ ERRO FIREBASE: $e");
+  }
+
   runApp(const MyApp());
 }
 
@@ -43,6 +50,7 @@ class MyApp extends StatelessWidget {
         '/redefinir': (_) => const TelaRedefinir(),
         '/catalogo': (_) => const TelaCatalogo(),
         '/geral': (_) => const TelaGeral(),
+        '/perfil': (_) => const TelaPerfil(),
       },
     );
   }

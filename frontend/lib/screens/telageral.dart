@@ -39,9 +39,14 @@ class TelaGeral extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        const Align(
+                        Align(
                           alignment: Alignment.topRight,
-                          child: Icon(Icons.person, size: 45),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/perfil');
+                            },
+                            child: const Icon(Icons.person, size: 45),
+                          ),
                         ),
                         const SizedBox(height: 50),
                         const Text(

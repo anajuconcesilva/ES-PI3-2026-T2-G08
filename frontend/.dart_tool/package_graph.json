@@ -244,7 +244,7 @@
     },
     {
       "name": "url_launcher_web",
-      "version": "2.4.2",
+      "version": "2.4.3",
       "dependencies": [
         "flutter",
         "flutter_web_plugins",
@@ -312,9 +312,10 @@
     },
     {
       "name": "video_player_avfoundation",
-      "version": "2.9.4",
+      "version": "2.9.5",
       "dependencies": [
         "flutter",
+        "meta",
         "video_player_platform_interface"
       ]
     },
@@ -560,7 +561,7 @@
     },
     {
       "name": "vm_service",
-      "version": "15.1.0",
+      "version": "15.2.0",
       "dependencies": []
     },
     {
