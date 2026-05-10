@@ -12,6 +12,7 @@ import 'package:mescla_invest_app/screens/perfil.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
+import 'screens/tela_balcao_lista.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: '/inicio',
+      initialRoute: '/balcao',
       routes: {
         '/inicio': (_) => const TelaInicio(),
         '/login': (_) => const TelaLogin(),
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/catalogo': (_) => const TelaCatalogo(),
         '/geral': (_) => const TelaGeral(),
         '/perfil': (_) => const TelaPerfil(),
+        '/balcao': (_) => const TelaBalcaoLista(),
       },
     );
   }
