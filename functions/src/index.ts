@@ -7,3 +7,5 @@ export * from "./auth";
 export * from "./users";
 
 export * from "./startups";
+
+export * from "./wallet";
