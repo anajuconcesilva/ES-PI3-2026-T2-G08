@@ -7,7 +7,7 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "source": "backend/functions",
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
