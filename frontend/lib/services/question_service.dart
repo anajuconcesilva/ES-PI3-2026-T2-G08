@@ -28,6 +28,20 @@ class QuestionService {
     String? visibility,
     String? status,
   }) async {
+    final data = await listQuestionsData(
+      startupId: startupId,
+      visibility: visibility,
+      status: status,
+    );
+
+    return data['questions'] as List<Map<String, dynamic>>;
+  }
+
+  Future<Map<String, dynamic>> listQuestionsData({
+    required String startupId,
+    String? visibility,
+    String? status,
+  }) async {
     try {
       final payload = <String, dynamic>{
         'startupId': startupId,
@@ -46,9 +60,13 @@ class QuestionService {
       final data = Map<String, dynamic>.from(response['data'] ?? response);
       final questions = data['questions'] as List<dynamic>? ?? [];
 
-      return questions
-          .map((question) => Map<String, dynamic>.from(question as Map))
-          .toList();
+      return {
+        ...data,
+        'questions': questions
+            .map((question) => Map<String, dynamic>.from(question as Map))
+            .toList(),
+        'access': Map<String, dynamic>.from(data['access'] ?? {}),
+      };
     } on FirebaseFunctionsException catch (e) {
       throw Exception(e.message ?? 'Erro ao listar perguntas');
     }

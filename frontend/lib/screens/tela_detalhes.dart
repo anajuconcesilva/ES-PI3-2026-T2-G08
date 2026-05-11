@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mescla_invest_app/services/startup_service.dart';
+import 'tela_perguntas.dart';
 import 'tela_societario.dart';
 
 class TelaDetalhesInformaEs extends StatefulWidget {
@@ -59,6 +60,10 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
                         const SizedBox(height: 25),
 
                         _buildInfoCard(sumario, widget.startupId),
+
+                        const SizedBox(height: 14),
+
+                        _buildQuestionsCard(widget.startupId),
 
                         const SizedBox(height: 20),
                       ],
@@ -159,6 +164,44 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
         ),
         onPressed: () {},
         child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildQuestionsCard(String id) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TelaPerguntas(startupId: id),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 15),
+        decoration: BoxDecoration(
+          color: const Color(0xFFBDD7EE),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF1482C7), width: 1.5),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.chat_bubble_outline),
+                SizedBox(width: 10),
+                Text(
+                  "Perguntas e Respostas",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            Icon(Icons.arrow_forward),
+          ],
+        ),
       ),
     );
   }
