@@ -1,6 +1,7 @@
+
+// tela feita pela aluna marilia santos RA 25014905
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 
 import '../midia_model.dart';
 import '../midia_server.dart';
@@ -81,8 +82,6 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
                       ),
                       child: Column(
                         children: [
-
-                          // 🔵 BARRA AZUL IGUAL À OUTRA TELA
                           _buildTabMidia(context),
 
                           Padding(
@@ -93,7 +92,7 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
 
                                 const SizedBox(height: 10),
 
-                                // ── PDFs ──
+// PDFs
                                 if (pdfs.isNotEmpty) ...[
                                   const Text(
                                     "Documentos",
@@ -111,7 +110,7 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
                                           width: 80,
                                           child: Column(
                                             children: [
-                                              const Icon(Icons.insert_drive_file, color: azul, size: 40),
+                                              Icon(Icons.insert_drive_file, color: azul, size: 40),
                                               const SizedBox(height: 6),
                                               Text(
                                                 m.titulo,
@@ -128,7 +127,7 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
                                   const SizedBox(height: 25),
                                 ],
 
-                                // ── Vídeos ──
+// VÍDEOS (abrindo YouTube)
                                 if (videos.isNotEmpty) ...[
                                   const Text(
                                     "Vídeos",
@@ -138,13 +137,35 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
 
                                   ...videos.map((m) => Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
-                                    child: VideoWidget(url: m.url),
+                                    child: GestureDetector(
+                                      onTap: () => abrirLink(m.url),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: azul),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.play_circle_fill, color: azul, size: 40),
+                                            const SizedBox(width: 12),
+                                            const Expanded(
+                                              child: Text(
+                                                "Abrir vídeo demonstrativo",
+                                                style: TextStyle(fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   )),
 
                                   const SizedBox(height: 10),
                                 ],
 
-                                // ── Galeria ──
+// GALERIA
                                 if (imagens.isNotEmpty) ...[
                                   const Text(
                                     "Galeria",
@@ -178,22 +199,6 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
                                                 img.url,
                                                 width: double.infinity,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return const Center(
-                                                    child: Column(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Icon(Icons.broken_image, size: 40, color: Colors.red),
-                                                        SizedBox(height: 4),
-                                                        Text("Erro ao carregar", style: TextStyle(fontSize: 10)),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                                loadingBuilder: (context, child, loadingProgress) {
-                                                  if (loadingProgress == null) return child;
-                                                  return const Center(child: CircularProgressIndicator());
-                                                },
                                               ),
                                             ),
                                             Padding(
@@ -228,7 +233,6 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
     );
   }
 
-  // 🔝 HEADER
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -289,66 +293,6 @@ class _TelaMidiaCompletaState extends State<TelaMidiaCompleta> {
         ],
       ),
     );
-  }
-}
-
-class VideoWidget extends StatefulWidget {
-  final String url;
-  const VideoWidget({super.key, required this.url});
-
-  @override
-  State<VideoWidget> createState() => _VideoWidgetState();
-}
-
-class _VideoWidgetState extends State<VideoWidget> {
-  late VideoPlayerController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (mounted) setState(() {});
-      });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: controller.value.aspectRatio == 0
-                ? 16 / 9
-                : controller.value.aspectRatio,
-            child: VideoPlayer(controller),
-          ),
-        ),
-        IconButton(
-          icon: Icon(
-            controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-          ),
-          onPressed: () {
-            setState(() {
-              controller.value.isPlaying
-                  ? controller.pause()
-                  : controller.play();
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 }
 
