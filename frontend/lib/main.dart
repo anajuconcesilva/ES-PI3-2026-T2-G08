@@ -13,6 +13,7 @@ import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
 import 'screens/tela_carteira.dart';
+import 'screens/tela_perguntas.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

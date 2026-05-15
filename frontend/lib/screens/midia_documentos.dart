@@ -1,4 +1,7 @@
+// tela feita pela aluna marilia santos RA 25014905
+
 import 'package:flutter/material.dart';
+import 'package:mescla_invest_app/screens/tela_perguntas.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../midia_model.dart';
@@ -113,21 +116,21 @@ class _TelaMidiaCompletaState
 
                   final pdfs =
                   midias.where(
-                          (m) =>
-                      m.tipo == "pdf")
-                      .toList();
+                        (m) =>
+                    m.tipo == "pdf",
+                  ).toList();
 
                   final videos =
                   midias.where(
-                          (m) =>
-                      m.tipo == "video")
-                      .toList();
+                        (m) =>
+                    m.tipo == "video",
+                  ).toList();
 
                   final imagens =
                   midias.where(
-                          (m) =>
-                      m.tipo == "imagem")
-                      .toList();
+                        (m) =>
+                    m.tipo == "imagem",
+                  ).toList();
 
                   return SingleChildScrollView(
                     padding:
@@ -152,7 +155,7 @@ class _TelaMidiaCompletaState
                       child: Column(
                         children: [
 
-                          _buildTabMidia(),
+                          _buildTabMidia(context),
 
                           Padding(
                             padding:
@@ -502,46 +505,66 @@ class _TelaMidiaCompletaState
     );
   }
 
-  Widget _buildTabMidia() {
+  Widget _buildTabMidia(
+      BuildContext context,
+      ) {
 
-    return Container(
-      width: double.infinity,
+    return GestureDetector(
+      onTap: () {
 
-      padding:
-      const EdgeInsets.symmetric(
-        vertical: 10,
-        horizontal: 15,
-      ),
+        Navigator.push(
+          context,
 
-      decoration: BoxDecoration(
-        color: const Color(0xFFBDD7EE),
+          MaterialPageRoute(
+            builder: (context) =>
+                TelaPerguntas(
+                  startupId:
+                  widget.startupId,
+                ),
+          ),
+        );
+      },
 
-        borderRadius:
-        const BorderRadius.vertical(
-          top: Radius.circular(18),
+      child: Container(
+        width: double.infinity,
+
+        padding:
+        const EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 15,
         ),
 
-        border: Border.all(
-          color: const Color(0xFF1482C7),
-        ),
-      ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFBDD7EE),
 
-      child: const Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceBetween,
-
-        children: [
-
-          Text(
-            "Mídia e Documentos",
-
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+          borderRadius:
+          const BorderRadius.vertical(
+            top: Radius.circular(18),
           ),
 
-          Icon(Icons.arrow_forward),
-        ],
+          border: Border.all(
+            color:
+            const Color(0xFF1482C7),
+          ),
+        ),
+
+        child: const Row(
+          mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
+
+          children: [
+
+            Text(
+              "Mídia e Documentos",
+
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            Icon(Icons.arrow_forward),
+          ],
+        ),
       ),
     );
   }
@@ -567,7 +590,8 @@ class _TelaMidiaCompletaState
 
       child: Row(
         mainAxisAlignment:
-        MainAxisAlignment.spaceAround,
+        MainAxisAlignment
+            .spaceAround,
 
         children: [
 
@@ -584,8 +608,11 @@ class _TelaMidiaCompletaState
           ),
 
           _NavItem(
-            icon: Icons.emoji_events,
+            icon:
+            Icons.emoji_events,
+
             label: "Startups",
+
             active: true,
 
             onTap: () {},
@@ -604,7 +631,9 @@ class _TelaMidiaCompletaState
           ),
 
           _NavItem(
-            icon: Icons.show_chart,
+            icon:
+            Icons.show_chart,
+
             label: "Valorização",
 
             onTap: () {},
@@ -643,7 +672,8 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
 
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize:
+        MainAxisSize.min,
 
         children: [
 
