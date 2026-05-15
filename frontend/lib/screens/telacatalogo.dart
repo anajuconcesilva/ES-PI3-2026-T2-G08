@@ -18,31 +18,38 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
 
       body: SafeArea(
         child: Column(
           children: [
+
             const SizedBox(height: 12),
 
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+
               child: Row(
                 children: [
+
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () =>
+                        Navigator.pop(context),
+
+                    icon: const Icon(
+                      Icons.arrow_back,
+                    ),
                   ),
 
-                  const SizedBox(width: 10),
-
                   const Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 6),
+                    child: Center(
                       child: Text(
                         "Catálogo de Startups",
-                        textAlign: TextAlign.center,
+
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -51,7 +58,7 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     ),
                   ),
 
-                  const Icon(Icons.person, size: 30),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -59,47 +66,95 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
             const SizedBox(height: 18),
 
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+
               child: GestureDetector(
                 onTap: () async {
 
-                  final selecionado = await showModalBottomSheet<String>(
+                  final selecionado =
+                  await showModalBottomSheet<String>(
                     context: context,
+
                     builder: (context) {
+
                       return Column(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisSize:
+                        MainAxisSize.min,
+
                         children: [
-                          _opcaoFiltro("todos", "Todos"),
-                          _opcaoFiltro("nova", "Nova"),
-                          _opcaoFiltro("em_operacao", "Em operação"),
-                          _opcaoFiltro("em_expansao", "Em expansão"),
+
+                          _opcaoFiltro(
+                            "todos",
+                            "Todos",
+                          ),
+
+                          _opcaoFiltro(
+                            "nova",
+                            "Nova",
+                          ),
+
+                          _opcaoFiltro(
+                            "em_operacao",
+                            "Em operação",
+                          ),
+
+                          _opcaoFiltro(
+                            "em_expansao",
+                            "Em expansão",
+                          ),
                         ],
                       );
                     },
                   );
 
                   if (selecionado != null) {
+
                     setState(() {
-                      filtroStage = selecionado;
+                      filtroStage =
+                          selecionado;
                     });
                   }
                 },
+
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDBD9D9),
-                    borderRadius: BorderRadius.circular(25),
+                  padding:
+                  const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
+
+                  decoration: BoxDecoration(
+                    color:
+                    const Color(0xFFDBD9D9),
+
+                    borderRadius:
+                    BorderRadius.circular(25),
+
+                    border: Border.all(
+                      color:
+                      const Color(0xFF1482C7),
+                    ),
+                  ),
+
                   child: Row(
                     children: [
-                      const Icon(Icons.filter_list),
+
+                      const Icon(
+                        Icons.filter_list,
+                      ),
+
                       const SizedBox(width: 10),
+
                       Expanded(
                         child: Text(
                           filtroStage == "todos"
                               ? "Filtrar por estágio"
-                              : filtroStage.replaceAll("_", " "),
+                              : filtroStage.replaceAll(
+                            "_",
+                            " ",
+                          ),
                         ),
                       ),
                     ],
@@ -119,53 +174,91 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     .snapshots()
                     : FirebaseFirestore.instance
                     .collection('startups')
-                    .where('stage', isEqualTo: filtroStage)
+                    .where(
+                  'stage',
+                  isEqualTo:
+                  filtroStage,
+                )
                     .snapshots(),
 
                 builder: (context, snapshot) {
+
                   if (snapshot.hasError) {
-                    print("ERRO FIRESTORE: ${snapshot.error}");
+
+                    print(
+                      "ERRO FIRESTORE: ${snapshot.error}",
+                    );
+
                     return Center(
-                      child: Text("Erro: ${snapshot.error}"),
+                      child: Text(
+                        "Erro: ${snapshot.error}",
+                      ),
                     );
                   }
 
-                  if (snapshot.connectionState == ConnectionState.waiting ||
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting ||
                       !snapshot.hasData) {
+
                     return const Center(
-                      child: CircularProgressIndicator(),
+                      child:
+                      CircularProgressIndicator(),
                     );
                   }
 
-                  final docs = snapshot.data!.docs;
+                  final docs =
+                      snapshot.data!.docs;
 
                   if (docs.isEmpty) {
+
                     return const Center(
-                      child: Text("Nenhuma startup encontrada"),
+                      child: Text(
+                        "Nenhuma startup encontrada",
+                      ),
                     );
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding:
+                    const EdgeInsets.symmetric(
+                      horizontal: 20,
+                    ),
+
                     itemCount: docs.length,
-                    itemBuilder: (context, index) {
+
+                    itemBuilder:
+                        (context, index) {
+
                       final data =
-                      docs[index].data() as Map<String, dynamic>;
+                      docs[index].data()
+                      as Map<String, dynamic>;
 
                       return _StartupCard(
-                        nome: data["name"] ?? "Sem nome",
-                        descricao: data["shortDescription"] ?? "Sem descrição",
-                        logoUrl: data["coverImageUrl"],
-                        stage: data["stage"] ?? "desconhecido",
+                        nome:
+                        data["name"] ??
+                            "Sem nome",
+
+                        descricao:
+                        data["shortDescription"] ??
+                            "Sem descrição",
+
+                        logoUrl:
+                        data["coverImageUrl"],
+
+                        stage:
+                        data["stage"] ??
+                            "desconhecido",
+
                         onPressed: () {
+
                           Navigator.push(
                             context,
+
                             MaterialPageRoute(
                               builder: (context) =>
                                   TelaDetalhesInformaEs(
-                                    startupId: docs[index]
-                                        .id, // Passa o ID único da startup
-
+                                    startupId:
+                                    docs[index].id,
                                   ),
                             ),
                           );
@@ -173,9 +266,10 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                       );
                     },
                   );
-                }
+                },
               ),
             ),
+
             const _BottomNav(),
           ],
         ),
@@ -183,17 +277,26 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
     );
   }
 
-  Widget _opcaoFiltro(String value, String label) {
+  Widget _opcaoFiltro(
+      String value,
+      String label,
+      ) {
+
     return ListTile(
       title: Text(label),
+
       onTap: () {
-        Navigator.pop(context, value);
+        Navigator.pop(
+          context,
+          value,
+        );
       },
     );
   }
 }
 
 class _StartupCard extends StatelessWidget {
+
   final String nome;
   final String descricao;
   final String? logoUrl;
@@ -209,26 +312,36 @@ class _StartupCard extends StatelessWidget {
   });
 
   String getStageLabel() {
+
     switch (stage) {
+
       case "nova":
         return "Nova";
+
       case "em_operacao":
         return "Em operação";
+
       case "em_expansao":
         return "Em expansão";
+
       default:
         return "Desconhecido";
     }
   }
 
   Color getStageColor() {
+
     switch (stage) {
+
       case "nova":
         return Colors.blue;
+
       case "em_operacao":
         return Colors.green;
+
       case "em_expansao":
         return Colors.orange;
+
       default:
         return Colors.grey;
     }
@@ -236,72 +349,134 @@ class _StartupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin:
+      const EdgeInsets.only(bottom: 16),
+
       padding: const EdgeInsets.all(16),
+
       decoration: BoxDecoration(
-        color: const Color(0xFFE8E8E8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1482C7)),
+        color:
+        const Color(0xFFE8E8E8),
+
+        borderRadius:
+        BorderRadius.circular(16),
+
+        border: Border.all(
+          color:
+          const Color(0xFF1482C7),
+        ),
+
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
             blurRadius: 4,
             offset: Offset(0, 3),
-          )
+          ),
         ],
       ),
+
       child: Row(
         children: [
-          logoUrl != null && logoUrl!.isNotEmpty
+
+          logoUrl != null &&
+              logoUrl!.isNotEmpty
+
               ? ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius:
+            BorderRadius.circular(8),
+
             child: Image.network(
               logoUrl!,
+
               width: 70,
               height: 70,
+
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.broken_image, size: 70);
+
+              errorBuilder:
+                  (
+                  context,
+                  error,
+                  stackTrace,
+                  ) {
+
+                return const Icon(
+                  Icons.broken_image,
+                  size: 70,
+                );
               },
             ),
           )
-              : const Icon(Icons.image, size: 70),
+
+              : const Icon(
+            Icons.image,
+            size: 70,
+          ),
 
           const SizedBox(width: 12),
 
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment:
+              CrossAxisAlignment.center,
+
               children: [
+
                 Text(
                   nome,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+
+                  style: const TextStyle(
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
                 ),
 
                 const SizedBox(height: 6),
 
                 Text(
                   descricao,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12),
+
+                  textAlign:
+                  TextAlign.center,
+
+                  style: const TextStyle(
+                    fontSize: 12,
+                  ),
                 ),
 
                 const SizedBox(height: 8),
 
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: getStageColor().withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                  padding:
+                  const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
+
+                  decoration: BoxDecoration(
+                    color:
+                    getStageColor()
+                        .withOpacity(0.2),
+
+                    borderRadius:
+                    BorderRadius.circular(
+                      12,
+                    ),
+                  ),
+
                   child: Text(
                     getStageLabel(),
+
                     style: TextStyle(
-                      color: getStageColor(),
+                      color:
+                      getStageColor(),
+
                       fontSize: 11,
-                      fontWeight: FontWeight.bold,
+
+                      fontWeight:
+                      FontWeight.bold,
                     ),
                   ),
                 ),
@@ -310,18 +485,37 @@ class _StartupCard extends StatelessWidget {
 
                 SizedBox(
                   width: 120,
+
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1482C7),
-                      foregroundColor: Colors.white,
+                    style:
+                    ElevatedButton.styleFrom(
+                      backgroundColor:
+                      const Color(
+                        0xFF1482C7,
+                      ),
+
+                      foregroundColor:
+                      Colors.white,
+
+                      shape:
+                      RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.circular(
+                          10,
+                        ),
+                      ),
                     ),
+
                     onPressed: onPressed,
-                    child: const Text("Conhecer"),
+
+                    child: const Text(
+                      "Conhecer",
+                    ),
                   ),
-                )
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -329,34 +523,70 @@ class _StartupCard extends StatelessWidget {
 }
 
 class _BottomNav extends StatelessWidget {
+
   const _BottomNav();
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        vertical: 12,
+      ),
+
       decoration: const BoxDecoration(
         color: Color(0xFFE8E8E8),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
       ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment:
+        MainAxisAlignment.spaceAround,
+
         children: [
+
           _Nav(
             icon: Icons.home,
             label: "Início",
+
             onTap: () {
-              Navigator.pushNamed(context, '/geral');
+              Navigator.pushNamed(
+                context,
+                '/geral',
+              );
             },
           ),
+
           const _Nav(
             icon: Icons.emoji_events,
             label: "Startups",
             active: true,
           ),
-          const _Nav(icon: Icons.attach_money, label: "Carteira"),
-          const _Nav(icon: Icons.show_chart, label: "Valorização"),
-          const _Nav(icon: Icons.store, label: "Negociar"),
+
+          _Nav(
+            icon: Icons.wallet,
+            label: "Carteira",
+
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/carteira',
+              );
+            },
+          ),
+
+          const _Nav(
+            icon: Icons.show_chart,
+            label: "Valorização",
+          ),
+
+          const _Nav(
+            icon: Icons.store,
+            label: "Negociar",
+          ),
         ],
       ),
     );
@@ -364,6 +594,7 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _Nav extends StatelessWidget {
+
   final IconData icon;
   final String label;
   final bool active;
@@ -378,21 +609,36 @@ class _Nav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
       onTap: onTap,
+
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+
         children: [
+
           Icon(
             icon,
-            color: active ? const Color(0xFF1482C7) : Colors.black,
+
+            color: active
+                ? const Color(0xFF1482C7)
+                : Colors.black,
           ),
+
+          const SizedBox(height: 4),
+
           Text(
             label,
+
             style: TextStyle(
-              fontSize: 11,
-              color: active ? const Color(0xFF1482C7) : Colors.black,
+              fontSize: 10,
+
+              color: active
+                  ? const Color(0xFF1482C7)
+                  : Colors.black,
             ),
-          )
+          ),
         ],
       ),
     );

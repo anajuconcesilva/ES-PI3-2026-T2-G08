@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mescla_invest_app/screens/tela_carteira.dart';
 import 'package:mescla_invest_app/screens/telaesqueci.dart';
 import 'package:mescla_invest_app/screens/telarecuperacao.dart';
 import 'package:mescla_invest_app/screens/telaredefinir.dart';
@@ -11,6 +12,7 @@ import 'package:mescla_invest_app/screens/telacatalogo.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
+import 'screens/tela_carteira.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +37,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      initialRoute: '/inicio',
+      initialRoute: '/geral',
 
       routes: {
         '/inicio': (_) => const TelaInicio(),
@@ -46,6 +48,7 @@ class MyApp extends StatelessWidget {
         '/redefinir': (_) => const TelaRedefinir(),
         '/catalogo': (_) => const TelaCatalogo(),
         '/geral': (_) => const TelaGeral(),
+        '/carteira': (_) => const TelaCarteira()
 
       },
     );

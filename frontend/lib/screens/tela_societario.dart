@@ -1,75 +1,131 @@
+// CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
+// RA:25002592
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // Para o gráfico de pizza
+import 'package:fl_chart/fl_chart.dart';
 import 'midia_documentos.dart';
-
 
 class TelaSocietario extends StatefulWidget {
   final String startupId;
 
-  const TelaSocietario({super.key, required this.startupId});
+  const TelaSocietario({
+    super.key,
+    required this.startupId,
+  });
 
   @override
-  State<TelaSocietario> createState() => _TelaSocietarioState();
+  State<TelaSocietario> createState() =>
+      _TelaSocietarioState();
 }
 
-class _TelaSocietarioState extends State<TelaSocietario> {
-  int abaGovernanca = 0; // 0 para Conselheiros, 1 para Mentores
+class _TelaSocietarioState
+    extends State<TelaSocietario> {
+
+  int abaGovernanca = 0;
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
+
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('startups')
               .doc(widget.startupId)
               .snapshots(),
+
           builder: (context, snapshot) {
-            if (snapshot.hasError) return const Center(child: Text("Erro ao carregar"));
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+
+            if (snapshot.hasError) {
+              return const Center(
+                child: Text("Erro ao carregar"),
+              );
             }
 
-            final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-            // Mapeando dados do Firebase (Listas de Mapas)
-            final List founders = data["founders"] ?? [];
-            final List externalMembers = data["externalMembers"] ?? [];
+            final data =
+                snapshot.data!.data()
+                as Map<String, dynamic>? ?? {};
+
+            final List founders =
+                data["founders"] ?? [];
+
+            final List externalMembers =
+                data["externalMembers"] ?? [];
 
             return Column(
               children: [
+
                 _buildHeader(context),
+
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
+
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFE8E8E8),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF1482C7), width: 1.5),
+
+                        borderRadius:
+                        BorderRadius.circular(20),
+
+                        border: Border.all(
+                          color: const Color(0xFF1482C7),
+                          width: 1.5,
+                        ),
                       ),
+
                       child: Column(
                         children: [
-                          // Chamando a aba com navegação
+
                           _buildTabSocietario(context),
+
                           const SizedBox(height: 20),
-                          const Text("Conheça nossos Sócios:", style: TextStyle(fontWeight: FontWeight.bold)),
+
+                          const Text(
+                            "Conheça nossos Sócios:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
                           const SizedBox(height: 15),
+
                           _buildListaSocios(founders),
+
                           const SizedBox(height: 30),
-                          const Text("Percentual de cada Sócio:", style: TextStyle(fontWeight: FontWeight.bold)),
+
+                          const Text(
+                            "Percentual de cada Sócio:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
                           _buildGraficoPizza(founders),
+
                           const SizedBox(height: 20),
-                          _buildSecaoGovernanca(externalMembers),
+
+                          _buildSecaoGovernanca(
+                            externalMembers,
+                          ),
+
                           const SizedBox(height: 20),
                         ],
                       ),
                     ),
                   ),
                 ),
-                _buildBottomNav(),
+
+                _buildBottomNav(context),
               ],
             );
           },
@@ -79,43 +135,94 @@ class _TelaSocietarioState extends State<TelaSocietario> {
   }
 
   Widget _buildHeader(BuildContext context) {
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-          const Text("Detalhes da Startup", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const Icon(Icons.person, size: 35),
+
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+
+            onPressed: () =>
+                Navigator.pop(context),
+          ),
+
+          const Expanded(
+            child: Center(
+              child: Text(
+                "Detalhes da Startup",
+
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 48),
         ],
       ),
     );
   }
 
-  // CORREÇÃO: Adicionado GestureDetector para navegar até a tela de Mídia
-  Widget _buildTabSocietario(BuildContext context) {
+  Widget _buildTabSocietario(
+      BuildContext context,
+      ) {
+
     return GestureDetector(
       onTap: () {
+
         Navigator.push(
           context,
+
           MaterialPageRoute(
-            // Passando o startupId para a tela de mídia carregar os dados certos
-            builder: (context) => TelaMidiaCompleta(startupId: widget.startupId),
+            builder: (context) =>
+                TelaMidiaCompleta(
+                  startupId:
+                  widget.startupId,
+                ),
           ),
         );
       },
+
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+
+        padding: const EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 15,
+        ),
+
         decoration: BoxDecoration(
           color: const Color(0xFFBDD7EE),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-          border: Border.all(color: const Color(0xFF1482C7)),
+
+          borderRadius:
+          const BorderRadius.vertical(
+            top: Radius.circular(18),
+          ),
+
+          border: Border.all(
+            color: const Color(0xFF1482C7),
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text("Societário", style: TextStyle(fontWeight: FontWeight.bold)),
+
+        child: const Row(
+          mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
+
+          children: [
+
+            Text(
+              "Societário",
+
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
             Icon(Icons.arrow_forward),
           ],
         ),
@@ -123,35 +230,73 @@ class _TelaSocietarioState extends State<TelaSocietario> {
     );
   }
 
-  Widget _buildListaSocios(List founders) {
+  Widget _buildListaSocios(
+      List founders,
+      ) {
+
     return Wrap(
       spacing: 40,
       runSpacing: 10,
+
       children: founders.map((f) {
+
         return SizedBox(
           width: 120,
-          child: Text("${founders.indexOf(f) + 1}. ${f['name']}", style: const TextStyle(fontSize: 13)),
+
+          child: Text(
+            "${founders.indexOf(f) + 1}. ${f['name']}",
+
+            style: const TextStyle(
+              fontSize: 13,
+            ),
+          ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildGraficoPizza(List founders) {
-    List<Color> cores = [const Color(0xFF1482C7), const Color(0xFF2E75B6), const Color(0xFF9DC3E6), const Color(0xFFBDD7EE)];
+  Widget _buildGraficoPizza(
+      List founders,
+      ) {
+
+    List<Color> cores = [
+      const Color(0xFF1482C7),
+      const Color(0xFF2E75B6),
+      const Color(0xFF9DC3E6),
+      const Color(0xFFBDD7EE),
+    ];
 
     return SizedBox(
       height: 200,
+
       child: PieChart(
         PieChartData(
           sections: founders.map((f) {
-            int index = founders.indexOf(f);
-            double percent = (f['equityPercent'] ?? 0).toDouble();
+
+            int index =
+            founders.indexOf(f);
+
+            double percent =
+            (f['equityPercent'] ?? 0)
+                .toDouble();
+
             return PieChartSectionData(
-              color: cores[index % cores.length],
+              color:
+              cores[index % cores.length],
+
               value: percent,
-              title: "${f['name']}\n$percent%",
+
+              title:
+              "${f['name']}\n$percent%",
+
               radius: 80,
-              titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black),
+
+              titleStyle:
+              const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             );
           }).toList(),
         ),
@@ -159,28 +304,74 @@ class _TelaSocietarioState extends State<TelaSocietario> {
     );
   }
 
-  Widget _buildSecaoGovernanca(List externalMembers) {
-    final conselheiros = externalMembers.where((m) => m['role'] == 'Conselheiro' || m['role'] == 'Conselheira').toList();
-    final mentores = externalMembers.where((m) => m['role'] == 'Mentor' || m['role'] == 'Mentora').toList();
+  Widget _buildSecaoGovernanca(
+      List externalMembers,
+      ) {
+
+    final conselheiros =
+    externalMembers.where((m) =>
+    m['role'] == 'Conselheiro' ||
+        m['role'] == 'Conselheira')
+        .toList();
+
+    final mentores =
+    externalMembers.where((m) =>
+    m['role'] == 'Mentor' ||
+        m['role'] == 'Mentora')
+        .toList();
 
     return Column(
       children: [
-        const Text("Governança:  conselheiros e mentores", style: TextStyle(fontWeight: FontWeight.bold)),
+
+        const Text(
+          "Governança: conselheiros e mentores",
+
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
         const SizedBox(height: 15),
+
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+          MainAxisAlignment.center,
+
           children: [
-            _btnGovernanca("Conselheiros", 0),
-            _btnGovernanca("Mentores", 1),
+
+            _btnGovernanca(
+              "Conselheiros",
+              0,
+            ),
+
+            _btnGovernanca(
+              "Mentores",
+              1,
+            ),
           ],
         ),
+
         const SizedBox(height: 15),
+
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 20,
+          ),
+
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+
             children: [
-              Expanded(child: _buildListaSimples(abaGovernanca == 0 ? conselheiros : mentores)),
+
+              Expanded(
+                child: _buildListaSimples(
+                  abaGovernanca == 0
+                      ? conselheiros
+                      : mentores,
+                ),
+              ),
             ],
           ),
         ),
@@ -188,47 +379,144 @@ class _TelaSocietarioState extends State<TelaSocietario> {
     );
   }
 
-  Widget _btnGovernanca(String label, int index) {
-    bool ativo = abaGovernanca == index;
+  Widget _btnGovernanca(
+      String label,
+      int index,
+      ) {
+
+    bool ativo =
+        abaGovernanca == index;
+
     return GestureDetector(
-      onTap: () => setState(() => abaGovernanca = index),
+      onTap: () {
+
+        setState(() {
+          abaGovernanca = index;
+        });
+      },
+
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
-        decoration: BoxDecoration(
-          color: ativo ? const Color(0xFFBDD7EE) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF1482C7)),
+        padding:
+        const EdgeInsets.symmetric(
+          horizontal: 30,
+          vertical: 8,
         ),
+
+        decoration: BoxDecoration(
+          color: ativo
+              ? const Color(0xFFBDD7EE)
+              : Colors.transparent,
+
+          borderRadius:
+          BorderRadius.circular(10),
+
+          border: Border.all(
+            color: const Color(0xFF1482C7),
+          ),
+        ),
+
         child: Text(label),
       ),
     );
   }
 
-  Widget _buildListaSimples(List lista) {
-    if (lista.isEmpty) return const Center(child: Text("Nenhum registro encontrado."));
+  Widget _buildListaSimples(
+      List lista,
+      ) {
+
+    if (lista.isEmpty) {
+      return const Center(
+        child: Text(
+          "Nenhum registro encontrado.",
+        ),
+      );
+    }
+
     return Column(
-      children: lista.map((item) => Padding(
-        padding: const EdgeInsets.only(bottom: 5),
-        child: Text("${lista.indexOf(item) + 1}. ${item['name']}"),
-      )).toList(),
+      children: lista.map((item) {
+
+        return Padding(
+          padding:
+          const EdgeInsets.only(
+            bottom: 5,
+          ),
+
+          child: Text(
+            "${lista.indexOf(item) + 1}. ${item['name']}",
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(
+      BuildContext context,
+      ) {
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))
+      padding: const EdgeInsets.symmetric(
+        vertical: 12,
       ),
+
+      decoration: const BoxDecoration(
+        color: Color(0xFFE8E8E8),
+
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
+      ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: const [
-          _NavItem(icon: Icons.home, label: "Início"),
-          _NavItem(icon: Icons.emoji_events, label: "Startups", active: true),
-          _NavItem(icon: Icons.wallet, label: "Carteira"),
-          _NavItem(icon: Icons.show_chart, label: "Valorização"),
-          _NavItem(icon: Icons.store, label: "Negociar"),
+        mainAxisAlignment:
+        MainAxisAlignment.spaceAround,
+
+        children: [
+
+          _NavItem(
+            icon: Icons.home,
+            label: "Início",
+
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/geral',
+              );
+            },
+          ),
+
+          _NavItem(
+            icon: Icons.emoji_events,
+            label: "Startups",
+            active: true,
+
+            onTap: () {},
+          ),
+
+          _NavItem(
+            icon: Icons.wallet,
+            label: "Carteira",
+
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/carteira',
+              );
+            },
+          ),
+
+          _NavItem(
+            icon: Icons.show_chart,
+            label: "Valorização",
+
+            onTap: () {},
+          ),
+
+          _NavItem(
+            icon: Icons.store,
+            label: "Negociar",
+
+            onTap: () {},
+          ),
         ],
       ),
     );
@@ -236,18 +524,53 @@ class _TelaSocietarioState extends State<TelaSocietario> {
 }
 
 class _NavItem extends StatelessWidget {
+
   final IconData icon;
   final String label;
   final bool active;
-  const _NavItem({required this.icon, required this.label, this.active = false});
+  final VoidCallback? onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    this.active = false,
+    this.onTap,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
-        Text(label, style: TextStyle(fontSize: 10, color: active ? const Color(0xFF1482C7) : Colors.black)),
-      ],
+
+    return GestureDetector(
+      onTap: onTap,
+
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+
+        children: [
+
+          Icon(
+            icon,
+
+            color: active
+                ? const Color(0xFF1482C7)
+                : Colors.black,
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            label,
+
+            style: TextStyle(
+              fontSize: 10,
+
+              color: active
+                  ? const Color(0xFF1482C7)
+                  : Colors.black,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
