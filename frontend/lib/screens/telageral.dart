@@ -1,6 +1,3 @@
-// CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
-// RA:25002592
-
 import 'package:flutter/material.dart';
 
 class TelaGeral extends StatelessWidget {
@@ -26,74 +23,134 @@ class TelaGeral extends StatelessWidget {
                 child: Column(
                   children: [
 
-                    // HEADER
                     Stack(
                       clipBehavior: Clip.none,
+
                       children: [
 
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(24, 40, 24, 120),
+
+                          padding: const EdgeInsets.fromLTRB(
+                            24,
+                            40,
+                            24,
+                            120,
+                          ),
+
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
                                 Color(0xFF1482C7),
                                 Color(0xFFB9DCE6),
                               ],
+
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                             ),
-                            borderRadius: BorderRadius.vertical(
-                              bottom: Radius.circular(40),
+
+                            borderRadius:
+                            BorderRadius.vertical(
+                              bottom:
+                              Radius.circular(40),
                             ),
                           ),
 
-                          child: const Column(
+                          child: Column(
                             children: [
 
-                              SizedBox(height: 40),
+                              Row(
+                                mainAxisAlignment:
+                                MainAxisAlignment.end,
 
-                              Text(
+                                children: [
+
+                                  Container(
+                                    padding:
+                                    const EdgeInsets.all(8),
+
+                                    child: GestureDetector(
+                                      onTap: () {
+
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/perfil',
+                                        );
+                                      },
+
+                                      child: const Icon(
+                                        Icons.person,
+
+                                        color: Colors.black,
+
+                                        size: 28,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              const Text(
                                 "Total de Tokens:",
+
                                 style: TextStyle(
                                   fontSize: 22,
-                                  fontWeight: FontWeight.w600,
+
+                                  fontWeight:
+                                  FontWeight.w600,
                                 ),
                               ),
 
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
 
-                              Text(
+                              const Text(
                                 "0,00",
+
                                 style: TextStyle(
                                   fontSize: 56,
-                                  fontWeight: FontWeight.bold,
+
+                                  fontWeight:
+                                  FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
                         ),
 
-                        // CARD FLUTUANTE
                         Positioned(
                           bottom: -40,
                           left: 24,
                           right: 24,
+
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding:
+                            const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 18,
                             ),
 
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEDEDED),
-                              borderRadius: BorderRadius.circular(18),
+                              color:
+                              const Color(0xFFEDEDED),
+
+                              borderRadius:
+                              BorderRadius.circular(18),
+
                               boxShadow: [
+
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color:
+                                  Colors.black.withOpacity(
+                                    0.2,
+                                  ),
+
                                   blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
+
+                                  offset:
+                                  const Offset(0, 4),
+                                ),
                               ],
                             ),
 
@@ -103,9 +160,12 @@ class TelaGeral extends StatelessWidget {
                                 const Expanded(
                                   child: Text(
                                     "Acesse seus tokens",
+
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+
+                                      fontWeight:
+                                      FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -118,7 +178,9 @@ class TelaGeral extends StatelessWidget {
 
                                 const SizedBox(width: 15),
 
-                                const Icon(Icons.stacked_line_chart),
+                                const Icon(
+                                  Icons.stacked_line_chart,
+                                ),
                               ],
                             ),
                           ),
@@ -128,26 +190,36 @@ class TelaGeral extends StatelessWidget {
 
                     const SizedBox(height: 70),
 
-                    // AÇÕES
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      padding:
+                      const EdgeInsets.symmetric(
+                        horizontal: 40,
+                      ),
 
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+
                         children: const [
 
                           _Action(
-                            icon: Icons.attach_money,
+                            icon:
+                            Icons.attach_money,
+
                             label: "Comprar",
                           ),
 
                           _Action(
-                            icon: Icons.credit_card,
+                            icon:
+                            Icons.credit_card,
+
                             label: "Vender",
                           ),
 
                           _Action(
-                            icon: Icons.chat_bubble,
+                            icon:
+                            Icons.chat_bubble,
+
                             label: "Perguntas",
                           ),
                         ],
@@ -156,33 +228,49 @@ class TelaGeral extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
-                    // TÍTULO
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding:
+                      const EdgeInsets.symmetric(
+                        horizontal: 24,
+                      ),
 
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+
                         children: [
 
                           const Text(
                             "Conheça nossas Startups !",
+
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w700,
+
+                              fontWeight:
+                              FontWeight.w700,
                             ),
                           ),
 
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/catalogo');
+
+                              Navigator.pushNamed(
+                                context,
+                                '/catalogo',
+                              );
                             },
 
                             child: const Text(
                               "Ver mais",
+
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF1482C7),
-                                fontWeight: FontWeight.w600,
+
+                                color:
+                                Color(0xFF1482C7),
+
+                                fontWeight:
+                                FontWeight.w600,
                               ),
                             ),
                           ),
@@ -192,36 +280,52 @@ class TelaGeral extends StatelessWidget {
 
                     const SizedBox(height: 50),
 
-                    // CARROSSEL
                     SizedBox(
                       height: 185,
 
                       child: PageView.builder(
                         padEnds: false,
 
-                        controller: PageController(
-                          viewportFraction: 0.82,
+                        controller:
+                        PageController(
+                          viewportFraction:
+                          0.82,
                         ),
 
-                        itemCount: imagens.length,
+                        itemCount:
+                        imagens.length,
 
-                        itemBuilder: (context, index) {
+                        itemBuilder:
+                            (
+                            context,
+                            index,
+                            ) {
+
                           return Padding(
-                            padding: EdgeInsets.only(
-                              left: index == 0 ? 24 : 10,
+                            padding:
+                            EdgeInsets.only(
+                              left:
+                              index == 0
+                                  ? 24
+                                  : 10,
+
                               right: 10,
                             ),
 
-                            child: GestureDetector(
+                            child:
+                            GestureDetector(
                               onTap: () {
+
                                 Navigator.pushNamed(
                                   context,
                                   '/catalogo',
                                 );
                               },
 
-                              child: _CardStartup(
-                                imagePath: imagens[index],
+                              child:
+                              _CardStartup(
+                                imagePath:
+                                imagens[index],
                               ),
                             ),
                           );
@@ -235,7 +339,6 @@ class TelaGeral extends StatelessWidget {
               ),
             ),
 
-            // MENU
             const _BottomNav(),
           ],
         ),
@@ -245,6 +348,7 @@ class TelaGeral extends StatelessWidget {
 }
 
 class _Action extends StatelessWidget {
+
   final IconData icon;
   final String label;
 
@@ -255,25 +359,36 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Column(
       children: [
 
         Container(
-          padding: const EdgeInsets.all(14),
+          padding:
+          const EdgeInsets.all(14),
 
           decoration: BoxDecoration(
-            color: const Color(0xFFD6EEF7),
-            borderRadius: BorderRadius.circular(14),
+            color:
+            const Color(0xFFD6EEF7),
+
+            borderRadius:
+            BorderRadius.circular(14),
           ),
 
-          child: Icon(icon, size: 22),
+          child: Icon(
+            icon,
+            size: 22,
+          ),
         ),
 
         const SizedBox(height: 6),
 
         Text(
           label,
-          style: const TextStyle(fontSize: 12),
+
+          style: const TextStyle(
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -281,6 +396,7 @@ class _Action extends StatelessWidget {
 }
 
 class _CardStartup extends StatelessWidget {
+
   final String imagePath;
 
   const _CardStartup({
@@ -289,17 +405,23 @@ class _CardStartup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+        BorderRadius.circular(22),
 
         image: DecorationImage(
-          image: AssetImage(imagePath),
+          image:
+          AssetImage(imagePath),
+
           fit: BoxFit.cover,
         ),
 
         border: Border.all(
-          color: const Color(0xFF1482C7),
+          color:
+          const Color(0xFF1482C7),
+
           width: 1.2,
         ),
       ),
@@ -312,49 +434,77 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
 
-      decoration: const BoxDecoration(
-        color: Color(0xFFE8E8E8),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
+    return Container(
+      padding:
+      const EdgeInsets.symmetric(
+        vertical: 12,
+      ),
+
+      decoration:
+      const BoxDecoration(
+        color:
+        Color(0xFFE8E8E8),
+
+        borderRadius:
+        BorderRadius.vertical(
+          top:
+          Radius.circular(25),
         ),
       ),
 
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment:
+        MainAxisAlignment.spaceAround,
+
         children: [
 
           _NavIcon(
             icon: Icons.home,
             label: "Início",
+
             active: true,
+
             onTap: () {},
           ),
 
           _NavIcon(
-            icon: Icons.emoji_events,
+            icon:
+            Icons.emoji_events,
+
             label: "Startups",
+
             onTap: () {
-              Navigator.pushNamed(context, '/catalogo');
+
+              Navigator.pushNamed(
+                context,
+                '/catalogo',
+              );
             },
           ),
 
           _NavIcon(
             icon: Icons.wallet,
             label: "Carteira",
+
             onTap: () {
-              Navigator.pushNamed(context, '/carteira');
+
+              Navigator.pushNamed(
+                context,
+                '/carteira',
+              );
             },
           ),
 
-          _NavIcon(
-            icon: Icons.show_chart,
-            label: "Valorização",
+          const _NavIcon(
+            icon:
+            Icons.show_chart,
+
+            label:
+            "Valorização",
           ),
 
-          _NavIcon(
+          const _NavIcon(
             icon: Icons.store,
             label: "Negociar",
           ),
@@ -365,6 +515,7 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _NavIcon extends StatelessWidget {
+
   final IconData icon;
   final String label;
   final bool active;
@@ -379,17 +530,23 @@ class _NavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
       onTap: onTap,
 
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize:
+        MainAxisSize.min,
+
         children: [
 
           Icon(
             icon,
+
             color: active
-                ? const Color(0xFF1482C7)
+                ? const Color(
+              0xFF1482C7,
+            )
                 : Colors.black,
           ),
 
@@ -397,10 +554,14 @@ class _NavIcon extends StatelessWidget {
 
           Text(
             label,
+
             style: TextStyle(
               fontSize: 10,
+
               color: active
-                  ? const Color(0xFF1482C7)
+                  ? const Color(
+                0xFF1482C7,
+              )
                   : Colors.black,
             ),
           ),
