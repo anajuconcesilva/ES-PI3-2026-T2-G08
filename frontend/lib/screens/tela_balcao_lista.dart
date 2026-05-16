@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'tela_balcao_detalhes.dart';
 
 class TelaBalcaoLista extends StatefulWidget {
   const TelaBalcaoLista({super.key});
@@ -34,7 +35,7 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
           "Balcão de negociação",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        centerTitle: false,
+        centerTitle: true,
         titleSpacing: 0,
       ),
       body: Padding(
@@ -216,9 +217,17 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
-                                    // AQUI VAMOS CHAMAR A TELA DA DIREITA!
-                                    // Podemos passar o ID e o Nome para a próxima tela
-                                    print("Ir para o balcão da startup: $startupId");
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TelaBalcaoDetalhes(
+                                          startupId: startupId,
+                                          nome: nome.toString(),
+                                          preco: precoFormatado,
+                                          imageUrl: coverImageUrl,
+                                        ),
+                                      ),
+                                    );
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: azulPrincipal,
