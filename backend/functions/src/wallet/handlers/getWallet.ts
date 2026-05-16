@@ -17,5 +17,8 @@ export const getWallet = onCall(async (request) => {
     };
   }
 
-  return wallet;
+  return {
+    success: true,
+    wallet,
+  };
 });

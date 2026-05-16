@@ -1,4 +1,7 @@
-import { onCall } from "firebase-functions/v2/https";
+import {
+  onCall,
+  HttpsError,
+} from "firebase-functions/v2/https";
 
 import { requireAuthenticatedUser } from "../shared/auth";
 
@@ -13,8 +16,22 @@ export const addBalance = onCall(async (request) => {
 
   const { value } = request.data;
 
-  if (!value || value <= 0) {
-    throw new Error("Valor inválido");
+  if (
+    value === undefined ||
+    value === null ||
+    typeof value !== "number"
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Valor inválido"
+    );
+  }
+
+  if (value <= 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "O valor deve ser maior que zero"
+    );
   }
 
   let wallet = await getWalletByUserId(user.uid);
@@ -32,6 +49,7 @@ export const addBalance = onCall(async (request) => {
 
   return {
     success: true,
+    message: "Saldo adicionado com sucesso",
     wallet,
   };
 });

@@ -1,4 +1,7 @@
-import { onCall } from "firebase-functions/v2/https";
+import {
+  onCall,
+  HttpsError,
+} from "firebase-functions/v2/https";
 
 import { requireAuthenticatedUser } from "../shared/auth";
 
@@ -17,26 +20,59 @@ export const sellToken = onCall(async (request) => {
     tokenPrice,
   } = request.data;
 
-  if (!startupId || quantity <= 0 || tokenPrice <= 0) {
-    throw new Error("Dados inválidos");
+  if (!startupId || typeof startupId !== "string") {
+    throw new HttpsError(
+      "invalid-argument",
+      "Startup inválida"
+    );
+  }
+
+  if (
+    typeof quantity !== "number" ||
+    quantity <= 0
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Quantidade inválida"
+    );
+  }
+
+  if (
+    typeof tokenPrice !== "number" ||
+    tokenPrice <= 0
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Preço do token inválido"
+    );
   }
 
   const total = quantity * tokenPrice;
 
-  let wallet = await getWalletByUserId(user.uid);
+  const wallet = await getWalletByUserId(user.uid);
 
   if (!wallet) {
-    throw new Error("Carteira não encontrada");
+    throw new HttpsError(
+      "not-found",
+      "Carteira não encontrada"
+    );
   }
 
-  const investment = wallet.investments[startupId];
+  const investment =
+    wallet.investments[startupId];
 
   if (!investment) {
-    throw new Error("Investimento não encontrado");
+    throw new HttpsError(
+      "not-found",
+      "Investimento não encontrado"
+    );
   }
 
   if (investment.quantity < quantity) {
-    throw new Error("Tokens insuficientes");
+    throw new HttpsError(
+      "failed-precondition",
+      "Tokens insuficientes"
+    );
   }
 
   investment.quantity -= quantity;
@@ -51,6 +87,7 @@ export const sellToken = onCall(async (request) => {
 
   return {
     success: true,
+    message: "Venda realizada com sucesso",
     wallet,
   };
 });

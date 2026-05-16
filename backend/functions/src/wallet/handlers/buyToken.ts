@@ -1,4 +1,7 @@
-import { onCall } from "firebase-functions/v2/https";
+import {
+  onCall,
+  HttpsError,
+} from "firebase-functions/v2/https";
 
 import { requireAuthenticatedUser } from "../shared/auth";
 
@@ -17,8 +20,31 @@ export const buyToken = onCall(async (request) => {
     tokenPrice,
   } = request.data;
 
-  if (!startupId || quantity <= 0 || tokenPrice <= 0) {
-    throw new Error("Dados inválidos");
+  if (!startupId || typeof startupId !== "string") {
+    throw new HttpsError(
+      "invalid-argument",
+      "Startup inválida"
+    );
+  }
+
+  if (
+    typeof quantity !== "number" ||
+    quantity <= 0
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Quantidade inválida"
+    );
+  }
+
+  if (
+    typeof tokenPrice !== "number" ||
+    tokenPrice <= 0
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Preço do token inválido"
+    );
   }
 
   const total = quantity * tokenPrice;
@@ -33,12 +59,16 @@ export const buyToken = onCall(async (request) => {
   }
 
   if (wallet.balance < total) {
-    throw new Error("Saldo insuficiente");
+    throw new HttpsError(
+      "failed-precondition",
+      "Saldo insuficiente"
+    );
   }
 
   wallet.balance -= total;
 
-  const investment = wallet.investments[startupId];
+  const investment =
+    wallet.investments[startupId];
 
   if (investment) {
 
@@ -57,6 +87,7 @@ export const buyToken = onCall(async (request) => {
 
   return {
     success: true,
+    message: "Compra realizada com sucesso",
     wallet,
   };
 });
