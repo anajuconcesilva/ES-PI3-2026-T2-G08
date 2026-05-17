@@ -1,5 +1,7 @@
 //CÓDIGO FEITO PELA ALUNA: Ana Júlia Conceição da Silva
 //RA: 25002592
+//Integração com o backend feita por Lucas David de Sousa
+//RA: 25895152
 
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
