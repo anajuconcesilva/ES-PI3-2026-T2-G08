@@ -6,8 +6,12 @@ import {
 import { requireAuthenticatedUser } from "../shared/auth";
 
 import {
+  createTransaction,
+} from "../../transactions/repositories/transactionRepository";
+
+import {
   getWalletByUserId,
-  updateWallet,
+  addBalance as addBalanceToWallet,
 } from "../repositories/walletRepository";
 
 export const addBalance = onCall(async (request) => {
@@ -34,18 +38,32 @@ export const addBalance = onCall(async (request) => {
     );
   }
 
-  let wallet = await getWalletByUserId(user.uid);
+  // =====================
+  // ATUALIZAR SALDO
+  // =====================
 
-  if (!wallet) {
-    wallet = {
-      balance: 0,
-      investments: {},
-    };
-  }
+  await addBalanceToWallet(
+    user.uid,
+    value
+  );
 
-  wallet.balance += value;
+  // =====================
+  // PEGAR WALLET ATUALIZADA
+  // =====================
 
-  await updateWallet(user.uid, wallet);
+  const wallet =
+    await getWalletByUserId(user.uid);
+
+  // =====================
+  // CRIAR TRANSAÇÃO
+  // =====================
+
+  await createTransaction({
+    userId: user.uid,
+    type: "deposit",
+    amount: value,
+    createdAt: new Date(),
+  });
 
   return {
     success: true,

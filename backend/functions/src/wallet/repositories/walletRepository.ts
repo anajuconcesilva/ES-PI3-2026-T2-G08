@@ -1,4 +1,8 @@
-import { getFirestore } from "firebase-admin/firestore";
+import {
+  getFirestore,
+  FieldValue,
+} from "firebase-admin/firestore";
+
 import { Wallet } from "../types/wallet";
 
 function getDb() {
@@ -37,6 +41,24 @@ export async function updateWallet(
     .set(
       {
         wallet,
+      },
+      { merge: true }
+    );
+}
+
+export async function addBalance(
+  userId: string,
+  value: number
+) {
+
+  await getDb()
+    .collection("users")
+    .doc(userId)
+    .set(
+      {
+        wallet: {
+          balance: FieldValue.increment(value),
+        },
       },
       { merge: true }
     );
