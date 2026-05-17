@@ -2,6 +2,8 @@
 //RA: 25002592
 
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class TelaCarteira extends StatefulWidget {
   const TelaCarteira({super.key});
@@ -12,7 +14,80 @@ class TelaCarteira extends StatefulWidget {
 
 class _TelaCarteiraState extends State<TelaCarteira> {
   bool mostrarSaldo = true;
+
   double saldo = 0.0;
+
+  List<dynamic> historico = [];
+
+  bool carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    carregarCarteira();
+  }
+
+  Future<void> carregarCarteira() async {
+
+    try {
+
+      final functions =
+          FirebaseFunctions.instance;
+
+      // =====================
+      // WALLET
+      // =====================
+
+      final walletCallable =
+      functions.httpsCallable(
+        'getWallet',
+      );
+
+      final walletResponse =
+      await walletCallable.call();
+
+      final walletData =
+          walletResponse.data;
+
+      // =====================
+      // TRANSACTIONS
+      // =====================
+
+      final transactionsCallable =
+      functions.httpsCallable(
+        'getTransactions',
+      );
+
+      final transactionsResponse =
+      await transactionsCallable.call();
+
+      final transactionsData =
+          transactionsResponse.data;
+
+      setState(() {
+
+        saldo =
+            (walletData["wallet"]?["balance"] ?? 0)
+                .toDouble();
+
+        historico =
+            transactionsData["data"] ?? [];
+
+        carregando = false;
+      });
+
+    } catch (e) {
+
+      print(
+        "Erro ao carregar carteira: $e",
+      );
+
+      setState(() {
+        carregando = false;
+      });
+    }
+  }
 
   void abrirModalSaldo() {
     final TextEditingController saldoController =
@@ -68,16 +143,35 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
 
                 double valor =
                     double.tryParse(saldoController.text) ?? 0;
 
-                setState(() {
-                  saldo += valor;
-                });
+                try {
 
-                Navigator.pop(context);
+                  final functions =
+                      FirebaseFunctions.instance;
+
+                  final callable =
+                  functions.httpsCallable(
+                    'addBalance',
+                  );
+
+                  await callable.call({
+                    "value": valor,
+                  });
+
+                  await carregarCarteira();
+
+                  Navigator.pop(context);
+
+                } catch (e) {
+
+                  print(
+                    "Erro ao adicionar saldo: $e",
+                  );
+                }
               },
               child: const Text("Confirmar"),
             ),
@@ -89,6 +183,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
   @override
   Widget build(BuildContext context) {
+
+    if (carregando) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
 
@@ -353,33 +456,50 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         color: const Color(0x1A1482C7),
                       ),
                       child: Column(
-                        children: const [
+                        children: historico.map((item) {
 
-                          _HistoricoItem(
-                            titulo: "Compra - AgroVision",
-                            valor: "-R\$ 500,00",
-                            data: "04/05/2026",
-                            positivo: false,
-                          ),
+                          final type = item["type"];
 
-                          Divider(color: Color(0xFF1482C7)),
+                          final positivo =
+                              type == "sell" ||
+                                  type == "deposit";
 
-                          _HistoricoItem(
-                            titulo: "Venda - FinBlock",
-                            valor: "+R\$ 360,00",
-                            data: "02/05/2026",
-                            positivo: true,
-                          ),
+                          String titulo = "";
 
-                          Divider(color: Color(0xFF1482C7)),
+                          if (type == "buy") {
+                            titulo =
+                            "Compra - ${item["startupName"]}";
+                          }
 
-                          _HistoricoItem(
-                            titulo: "Compra - MedSync",
-                            valor: "-R\$ 200,00",
-                            data: "02/05/2026",
-                            positivo: false,
-                          ),
-                        ],
+                          if (type == "sell") {
+                            titulo =
+                            "Venda - ${item["startupName"]}";
+                          }
+
+                          if (type == "deposit") {
+                            titulo = "Adição de saldo";
+                          }
+
+                          return Column(
+                            children: [
+
+                              _HistoricoItem(
+                                titulo: titulo,
+
+                                valor:
+                                "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
+
+                                data: "Agora",
+
+                                positivo: positivo,
+                              ),
+
+                              const Divider(
+                                color: Color(0xFF1482C7),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
 
