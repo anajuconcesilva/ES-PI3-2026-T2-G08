@@ -50,8 +50,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
         "senha": senhaController.text.trim(),
       });
 
+      final data = Map<String, dynamic>.from(result.data);
+
+      print(data);
+
+      final message = data['data']?['message'] ?? 'Cadastro realizado';
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.data['message'])),
+        SnackBar(content: Text(message)),
       );
 
       nomeController.clear();
