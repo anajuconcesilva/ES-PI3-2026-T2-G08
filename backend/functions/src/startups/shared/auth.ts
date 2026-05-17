@@ -3,7 +3,7 @@
  *
  */
 
-import { CallableRequest, HttpsError } from "firebase-functions/https";
+import { CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import { AuthenticatedUser } from "../types";
 
 export function requireAuthenticatedUser(

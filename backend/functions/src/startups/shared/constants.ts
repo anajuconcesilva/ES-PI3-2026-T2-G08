@@ -3,7 +3,7 @@
  *
  */
 
-import { QuestionVisibility, StartupStage } from "../types";
+import { QuestionStatus, QuestionVisibility, StartupStage } from "../types";
 
 export const allowedStages: StartupStage[] = [
   "nova",
@@ -14,4 +14,9 @@ export const allowedStages: StartupStage[] = [
 export const allowedVisibilities: QuestionVisibility[] = [
   "publica",
   "privada",
-]
+];
+
+export const allowedQuestionStatuses: QuestionStatus[] = [
+  "pendente",
+  "respondida",
+];

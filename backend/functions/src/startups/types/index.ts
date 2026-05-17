@@ -9,6 +9,8 @@ export type StartupStage = "nova" | "em_operacao" | "em_expansao";
 
 export type QuestionVisibility = "publica" | "privada";
 
+export type QuestionStatus = "pendente" | "respondida";
+
 export type AuthenticatedUser = {
   uid: string;
   email?: string;
@@ -42,6 +44,8 @@ export type StartupDocument = {
   pitchDeckUrl?: string;
   coverImageUrl?: string;
   tags: string[];
+  ownerUid?: string;
+  createdByUid?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
@@ -51,9 +55,26 @@ export type StartupQuestionDocument = {
   authorEmail?: string;
   text: string;
   visibility: QuestionVisibility;
+  status?: QuestionStatus;
   answer?: string;
+  answeredByUid?: string;
   answeredAt?: Timestamp;
   createdAt: FieldValue;
+  updatedAt?: FieldValue;
+};
+
+export type StartupQuestionListItem = {
+  id: string;
+  startupId: string;
+  authorUid: string;
+  text: string;
+  visibility: QuestionVisibility;
+  status: QuestionStatus;
+  answer: string | null;
+  answeredAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  askedByCurrentUser?: boolean;
 };
 
 export type StartupListItem = {

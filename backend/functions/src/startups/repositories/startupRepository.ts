@@ -6,9 +6,12 @@
 import { FieldValue } from "firebase-admin/firestore";
 
 import {
+  QuestionStatus,
+  QuestionVisibility,
   StartupDocument,
   StartupListItem,
   StartupQuestionDocument,
+  StartupQuestionListItem,
 } from "../types";
 
 import { db } from "../shared/firebase";
@@ -172,6 +175,69 @@ export async function userIsInvestor(startupId: string, uid: string): Promise<bo
   return investorSnapshot.exists;
 }
 
+export async function userCanManageStartup(
+  startupId: string,
+  uid: string
+): Promise<boolean> {
+  const startupSnapshot = await startupCollection.doc(startupId).get();
+
+  if (!startupSnapshot.exists) {
+    return false;
+  }
+
+  const startup = startupSnapshot.data() as StartupDocument;
+
+  if (startup.ownerUid === uid || startup.createdByUid === uid) {
+    return true;
+  }
+
+  const managerSnapshot = await startupCollection
+    .doc(startupId)
+    .collection("managers")
+    .doc(uid)
+    .get();
+
+  return managerSnapshot.exists;
+}
+
+function getTimestampAsIso(value: unknown): string | null {
+  if (value && typeof value === "object" && "toDate" in value) {
+    const date = (value as {toDate: () => Date}).toDate();
+    return date.toISOString();
+  }
+
+  return null;
+}
+
+function getQuestionStatus(
+  question: StartupQuestionDocument
+): QuestionStatus {
+  if (question.status) {
+    return question.status;
+  }
+
+  return question.answer ? "respondida" : "pendente";
+}
+
+function toQuestionListItem(
+  startupId: string,
+  id: string,
+  question: StartupQuestionDocument
+): StartupQuestionListItem {
+  return {
+    id,
+    startupId,
+    authorUid: question.authorUid,
+    text: question.text,
+    visibility: question.visibility,
+    status: getQuestionStatus(question),
+    answer: question.answer ?? null,
+    answeredAt: getTimestampAsIso(question.answeredAt),
+    createdAt: getTimestampAsIso(question.createdAt),
+    updatedAt: getTimestampAsIso(question.updatedAt),
+  };
+}
+
 export async function listPublicQuestions(startupId: string) {
   const questionsSnapshot = await startupCollection
     .doc(startupId)
@@ -190,6 +256,96 @@ export async function listPublicQuestions(startupId: string) {
     }))
     .sort((left, right) => String(right.createdAt ?? "")
       .localeCompare(String(left.createdAt ?? "")));
+}
+
+export async function listQuestionsByStartup(
+  startupId: string,
+  options: {
+    includePrivate: boolean;
+    requesterUid: string;
+    visibility?: QuestionVisibility;
+    status?: QuestionStatus;
+    limit?: number;
+  }
+): Promise<StartupQuestionListItem[]> {
+  const questionsSnapshot = await startupCollection
+    .doc(startupId)
+    .collection("questions")
+    .limit(options.limit ?? 100)
+    .get();
+
+  return questionsSnapshot.docs
+    .map((doc) =>
+      toQuestionListItem(
+        startupId,
+        doc.id,
+        doc.data() as StartupQuestionDocument
+      )
+    )
+    .filter((question) => {
+      const canReadPrivate =
+        options.includePrivate || question.authorUid === options.requesterUid;
+
+      if (question.visibility === "privada" && !canReadPrivate) {
+        return false;
+      }
+
+      if (options.visibility && question.visibility !== options.visibility) {
+        return false;
+      }
+
+      if (options.status && question.status !== options.status) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((question) => ({
+      ...question,
+      askedByCurrentUser: question.authorUid === options.requesterUid,
+    }))
+    .sort((left, right) => String(right.createdAt ?? "")
+      .localeCompare(String(left.createdAt ?? "")));
+}
+
+export async function getQuestionById(
+  startupId: string,
+  questionId: string
+): Promise<StartupQuestionListItem | null> {
+  const questionSnapshot = await startupCollection
+    .doc(startupId)
+    .collection("questions")
+    .doc(questionId)
+    .get();
+
+  if (!questionSnapshot.exists) {
+    return null;
+  }
+
+  return toQuestionListItem(
+    startupId,
+    questionSnapshot.id,
+    questionSnapshot.data() as StartupQuestionDocument
+  );
+}
+
+export async function answerQuestion(
+  startupId: string,
+  questionId: string,
+  answer: string,
+  answeredByUid: string
+): Promise<void> {
+  await startupCollection
+    .doc(startupId)
+    .collection("questions")
+    .doc(questionId)
+    .update({
+      answer,
+      answeredByUid,
+      status: "respondida",
+      answeredAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 }
 
 export async function createQuestion(

@@ -4,7 +4,7 @@
  */
 
 import { FieldValue } from "firebase-admin/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import { allowedVisibilities } from "../shared/constants";
 import { requireAuthenticatedUser } from "../shared/auth";
@@ -73,7 +73,9 @@ export const createStartupQuestion = onCall(async (request) => {
     authorEmail: user.email,
     text,
     visibility: visibility as QuestionVisibility,
+    status: "pendente",
     createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
   const questionId = await createQuestion(startupId, question);
