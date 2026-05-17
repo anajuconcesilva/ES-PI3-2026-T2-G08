@@ -2,23 +2,30 @@
 
 class Pergunta {
   final String id;
-  final String pergunta;
-  final String resposta;
-  final bool publica;
+  final String text;
+  final String answer;
+  final String visibility;
+  final String status;
 
   Pergunta({
     required this.id,
-    required this.pergunta,
-    required this.resposta,
-    required this.publica,
+    required this.text,
+    required this.answer,
+    required this.visibility,
+    required this.status,
   });
 
   factory Pergunta.fromMap(String id, Map<String, dynamic> map) {
     return Pergunta(
       id: id,
-      pergunta: map['pergunta'] ?? '',
-      resposta: map['resposta'] ?? '',
-      publica: map['publica'] ?? true,
+      text: map['text'] ?? '',
+      answer: map['answer'] ?? '',
+      visibility: map['visibility'] ?? 'publica',
+      status: map['status'] ?? 'pendente',
     );
   }
+
+  bool get publica => visibility == 'publica';
+  String get pergunta => text;
+  String get resposta => answer;
 }

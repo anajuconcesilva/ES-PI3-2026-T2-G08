@@ -1,7 +1,7 @@
 // tela feita pela aluna marilia santos RA 25014905
 import 'package:flutter/material.dart';
 import '../pergunta_model.dart';
-import '../pergunta_server.dart';
+import '../question_service.dart';
 import 'midia_documentos.dart';
 
 class TelaPerguntas extends StatefulWidget {
@@ -20,8 +20,10 @@ class TelaPerguntas extends StatefulWidget {
 class _TelaPerguntasState
     extends State<TelaPerguntas> {
 
-  late Future<List<Pergunta>>
+  late Future<QuestionResponse>
   futurePerguntas;
+
+  bool _privada = false;
 
   final TextEditingController
   _controller =
@@ -34,7 +36,7 @@ class _TelaPerguntasState
     super.initState();
 
     futurePerguntas =
-        PerguntaService.fetchPerguntas(
+        QuestionService().fetchPerguntas(
           widget.startupId,
         );
   }
@@ -44,48 +46,50 @@ class _TelaPerguntasState
     setState(() {
 
       futurePerguntas =
-          PerguntaService.fetchPerguntas(
+          QuestionService().fetchPerguntas(
             widget.startupId,
           );
     });
   }
 
-  Future<void> _enviarPergunta()
-  async {
-
-    final texto =
-    _controller.text.trim();
+  Future<void> _enviarPergunta() async {
+    final texto = _controller.text.trim();
 
     if (texto.isEmpty) return;
 
-    setState(() =>
-    _enviando = true);
+    setState(() => _enviando = true);
 
-    await PerguntaService
-        .enviarPergunta(
-      widget.startupId,
-      texto,
-    );
-
-    _controller.clear();
-
-    _recarregar();
-
-    setState(() =>
-    _enviando = false);
-
-    if (mounted) {
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-
-        const SnackBar(
-          content: Text(
-            "Pergunta enviada com sucesso!",
-          ),
-        ),
+    try {
+      await QuestionService().enviarPergunta(
+        widget.startupId,
+        texto,
+        _privada,
       );
+
+      _controller.clear();
+      _recarregar();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Pergunta enviada com sucesso!"),
+          ),
+        );
+      }
+    } catch (e) {
+      print("ERRO AO ENVIAR: $e");
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro: $e"),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _enviando = false);
+      }
     }
   }
 
@@ -115,7 +119,7 @@ class _TelaPerguntasState
 
             Expanded(
               child:
-              FutureBuilder<List<Pergunta>>(
+              FutureBuilder<QuestionResponse>(
                 future:
                 futurePerguntas,
 
@@ -145,8 +149,9 @@ class _TelaPerguntasState
                     );
                   }
 
-                  final perguntas =
-                  snapshot.data!;
+                  final response = snapshot.data!;
+                  final perguntas = response.perguntas;
+                  final podePrivada = response.canReadPrivateQuestions;
 
                   final publicas =
                   perguntas.where(
@@ -408,12 +413,9 @@ class _TelaPerguntasState
                                       ),
 
                                       const Text(
-                                        "Perguntas privadas para os empreendedores",
-
-                                        style:
-                                        TextStyle(
-                                          fontSize:
-                                          12,
+                                        "Perguntas privadas são exclusivas para investidores",
+                                        style: TextStyle(
+                                          fontSize: 12,
                                         ),
                                       ),
 
@@ -421,19 +423,62 @@ class _TelaPerguntasState
                                         height: 16,
                                       ),
 
-                                      const Text(
-                                        "Apenas investidores possuem acesso a esta seção",
-
-                                        style:
-                                        TextStyle(
-                                          fontSize:
-                                          13,
-                                        ),
-                                      ),
-
                                       const SizedBox(
                                         height: 12,
                                       ),
+
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.35),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    "Modo exclusivo",
+                                                    style: TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    podePrivada
+                                                        ? "Visível apenas para a equipe da startup"
+                                                        : "Liberado somente para investidores",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: _privada,
+                                              onChanged: podePrivada
+                                                  ? (value) {
+                                                setState(() {
+                                                  _privada = value;
+                                                });
+                                              }
+                                                  : null,
+                                              activeColor: azul,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 12),
 
                                       TextField(
                                         controller:
