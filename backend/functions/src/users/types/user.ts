@@ -22,7 +22,11 @@ export interface User {
     cpfRaw: string;
     telefone: string;
     telefoneRaw: string;
-    saldo: number;
+
+    wallet: {
+        balance: number;
+        investments: Record<string, number>;
+    };
     createdAt: Timestamp;
 
     mfaEnabled?: boolean;

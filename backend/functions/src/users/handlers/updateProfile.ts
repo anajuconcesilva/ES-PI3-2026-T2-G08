@@ -24,7 +24,7 @@
  * - sincroniza Firebase Auth + Firestore
  */
 
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 
 import {
@@ -110,7 +110,6 @@ export const updateProfile = onCall(async (request) => {
         email: updatedUser.email,
         cpf: updatedUser.cpf,
         telefone: updatedUser.telefone,
-        saldo: updatedUser.saldo,
       },
     },
   };

@@ -19,7 +19,7 @@
  * - O estado do MFA é limpo para evitar reutilização de dados antigos
  */
 
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { db } from "../shared/firebase";
 
 /**

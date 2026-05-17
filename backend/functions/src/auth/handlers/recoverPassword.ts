@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase/app";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 

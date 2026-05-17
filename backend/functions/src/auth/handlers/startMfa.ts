@@ -20,7 +20,7 @@
  * - Os dados são armazenados no documento do próprio usuário
  */
 
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { db } from "../shared/firebase";
 
 /**

@@ -2,7 +2,7 @@
  * Código feito por Lucas David de Sousa(disponibilizado pelo professor), RA: 25895152
  */
 
-import { HttpsError, onCall } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { seedDemoStartups } from "../repositories/startupRepository";
 
 /**

@@ -87,7 +87,10 @@ console.log("AUTH:", request.auth);
       cpfRaw: cpf,
       telefone,
       telefoneRaw: telefone,
-      saldo: 0,
+      wallet: {
+        balance: 0,
+        investments: {},
+      },
       createdAt: Timestamp.now(),
     });
 
@@ -100,7 +103,7 @@ console.log("AUTH:", request.auth);
         id: user.id,
         nome: user.nome,
         email: user.email,
-        saldo: user.saldo,
+        wallet: user.wallet,
       },
     };
 

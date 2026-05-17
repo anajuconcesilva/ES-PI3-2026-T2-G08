@@ -8,7 +8,7 @@
  * Responsável por consultar o perfil do usuário autenticado.
  */
 
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { findByAuthUid } from "../repositories/userRepository";
 
 export const getProfile = onCall(async (request) => {
@@ -29,7 +29,7 @@ export const getProfile = onCall(async (request) => {
       email: user.email,
       cpf: user.cpf,
       telefone: user.telefone,
-      saldo: user.saldo,
+      wallet: user.wallet,
       mfaEnabled: user.mfaEnabled ?? false,
       mfaVerified: user.mfaVerified ?? false,
     },
