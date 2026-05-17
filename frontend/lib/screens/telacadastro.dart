@@ -2,8 +2,7 @@
 //RA: 25002592
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
@@ -39,44 +38,39 @@ class _TelaCadastroState extends State<TelaCadastro> {
     setState(() => isLoading = true);
 
     try {
-      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: senhaController.text.trim(),
-      );
+      final functions = FirebaseFunctions.instance;
 
-      final uid = cred.user!.uid;
-
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      final result = await functions
+          .httpsCallable('registerUser')
+          .call({
         "nome": nomeController.text.trim(),
         "email": emailController.text.trim(),
         "cpf": cpfController.text.trim(),
         "telefone": telefoneController.text.trim(),
-        "saldo": 0,
-        "createdAt": FieldValue.serverTimestamp(),
+        "senha": senhaController.text.trim(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Usuário cadastrado com sucesso")),
+        SnackBar(content: Text(result.data['message'])),
       );
 
-      Navigator.pushNamed(context, '/login');
+      nomeController.clear();
+      emailController.clear();
+      cpfController.clear();
+      telefoneController.clear();
+      senhaController.clear();
+      confirmController.clear();
 
-    } on FirebaseAuthException catch (e) {
-      String msg = "Erro ao cadastrar";
+      await Future.delayed(const Duration(milliseconds: 800));
+      Navigator.pushReplacementNamed(context, '/login');
 
-      if (e.code == 'email-already-in-use') {
-        msg = "E-mail já cadastrado";
-      } else if (e.code == 'weak-password') {
-        msg = "Senha muito fraca";
-      }
-
+    } on FirebaseFunctionsException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
+        SnackBar(content: Text(e.message ?? "Erro ao cadastrar")),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro: $e")),
+        SnackBar(content: Text("Erro inesperado: $e")),
       );
     } finally {
       setState(() => isLoading = false);
