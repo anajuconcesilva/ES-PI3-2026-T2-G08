@@ -24,7 +24,7 @@ import { User, UserWithId } from "../types/user";
 const COLLECTION = "users";
 
 // Buscar por email
-export async function findByEmail(email: string): Promise<UserWithId | null> {
+export async function getUserByEmail(email: string): Promise<UserWithId | null> {
   const snapshot = await db
     .collection(COLLECTION)
     .where("email", "==", email)
@@ -42,7 +42,7 @@ export async function findByEmail(email: string): Promise<UserWithId | null> {
 }
 
 // Buscar por CPF
-export async function findByCPF(cpfRaw: string): Promise<UserWithId | null> {
+export async function getUserByCPF(cpfRaw: string): Promise<UserWithId | null> {
   const snapshot = await db
     .collection(COLLECTION)
     .where("cpfRaw", "==", cpfRaw)
@@ -60,7 +60,7 @@ export async function findByCPF(cpfRaw: string): Promise<UserWithId | null> {
 }
 
 // Buscar por UID do Firebase Auth
-export async function findByAuthUid(
+export async function getUserByAuthUid(
   authUid: string
 ): Promise<UserWithId | null> {
   const doc = await db.collection(COLLECTION).doc(authUid).get();

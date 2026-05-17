@@ -26,78 +26,65 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 import { Timestamp } from "firebase-admin/firestore";
 
-import { createUser, findByCPF } from "../repositories/userRepository";
-import { validateRegisterInput } from "../shared/validators";
+import { createUser, getUserByCPF } from "../repositories/userRepository";
+import {
+    validateRegisterInput,
+    formatCPF,
+    formatPhone,
+} from "../shared/validators";
 
 /**
  * API de cadastro de usuário (Callable)
  */
 export const registerUser = onCall(async (request) => {
-console.log("🔥 REGISTER USER FOI CHAMADO");
-console.log("DATA:", request.data);
-console.log("AUTH:", request.auth);
+
+  const validation = validateRegisterInput(request.data);
+
+  if (!validation.valid) {
+    throw new HttpsError("invalid-argument", validation.message);
+  }
+
+  const { nome, email, cpf, telefone, senha } = validation.data;
+
+  const cpfExists = await getUserByCPF(cpf);
+
+  if (cpfExists) {
+    throw new HttpsError("already-exists", "CPF já cadastrado");
+  }
+
+  let userRecord;
+
   try {
-    // =========================
-    // 1. VALIDAÇÃO
-    // =========================
-    const validation = validateRegisterInput(request.data);
-
-    if (!validation.valid) {
-      throw new HttpsError("invalid-argument", validation.message);
-    }
-
-    const { nome, email, cpf, telefone, senha } = validation.data;
-
-    // =========================
-    // 2. VERIFICAR CPF DUPLICADO
-    // =========================
-    const cpfExists = await findByCPF(cpf);
-
-    if (cpfExists) {
-      throw new HttpsError("already-exists", "CPF já cadastrado");
-    }
-
-    // =========================
-    // 3. CRIAR USUÁRIO NO AUTH
-    // =========================
-    let userRecord;
-
-    try {
-      userRecord = await getAuth().createUser({
-        email,
-        password: senha,
-        displayName: nome,
-      });
-    } catch (error: any) {
-      if (error.code === "auth/email-already-exists") {
-        throw new HttpsError("already-exists", "E-mail já cadastrado");
-      }
-
-      throw new HttpsError("internal", "Erro ao criar usuário");
-    }
-
-    // =========================
-    // 4. SALVAR NO FIRESTORE
-    // =========================
-    const user = await createUser({
-      authUid: userRecord.uid,
-      nome,
+    userRecord = await getAuth().createUser({
       email,
-      cpf,
-      cpfRaw: cpf,
-      telefone,
-      telefoneRaw: telefone,
-      wallet: {
+      password: senha,
+      displayName: nome,
+    });
+  } catch (error: any) {
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError("already-exists", "E-mail já cadastrado");
+    }
+
+    throw new HttpsError("internal", "Erro ao criar usuário");
+  }
+
+  const user = await createUser({
+    authUid: userRecord.uid,
+    nome,
+    email,
+    cpf: formatCPF(cpf),
+    cpfRaw: cpf,
+    telefone: formatPhone(telefone),
+    telefoneRaw: telefone,
+    wallet: {
         balance: 0,
         investments: {},
-      },
-      createdAt: Timestamp.now(),
-    });
+    },
+    createdAt: Timestamp.now(),
+  });
 
-    // =========================
-    // 5. RETORNO
-    // =========================
-    return {
+  return {
+    data: {
       message: "Usuário cadastrado com sucesso",
       user: {
         id: user.id,
@@ -105,15 +92,6 @@ console.log("AUTH:", request.auth);
         email: user.email,
         wallet: user.wallet,
       },
-    };
-
-  } catch (error: any) {
-    console.error("Erro ao cadastrar usuário:", error);
-
-    if (error instanceof HttpsError) {
-      throw error;
-    }
-
-    throw new HttpsError("internal", "Erro interno do servidor");
-  }
+    },
+  };
 });
