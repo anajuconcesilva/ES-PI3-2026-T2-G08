@@ -15,9 +15,14 @@ class _TelaEsqueciState extends State<TelaEsqueci> {
   Future<void> enviarEmail() async {
     final email = emailController.text.trim();
 
-    if (email.isEmpty || !email.contains('@')) {
+    // Validação mais robusta de email
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+
+    if (email.isEmpty || !emailRegex.hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Digite um email válido")),
+        const SnackBar(
+          content: Text("Digite um email válido."),
+        ),
       );
       return;
     }
@@ -25,21 +30,40 @@ class _TelaEsqueciState extends State<TelaEsqueci> {
     setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+      );
 
+      // Mensagem mais profissional (mais segura também)
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Email de recuperação enviado! Verifique sua caixa de entrada."),
+          content: Text(
+            "Se o email estiver cadastrado, você receberá instruções para redefinir sua senha.",
+          ),
         ),
       );
 
-      Navigator.pop(context); // volta pro login
+      // Melhor controle de fluxo (evita bugs de navegação)
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
 
     } on FirebaseAuthException catch (e) {
-      String msg = "Erro ao enviar email";
+      String msg;
 
-      if (e.code == 'user-not-found') {
-        msg = "Usuário não encontrado";
+      switch (e.code) {
+        case 'invalid-email':
+          msg = "Email inválido.";
+          break;
+        case 'user-not-found':
+        // versão mais segura (evita enumeração de usuários)
+          msg = "Se o email estiver cadastrado, você receberá instruções.";
+          break;
+        case 'too-many-requests':
+          msg = "Muitas tentativas. Tente novamente mais tarde.";
+          break;
+        default:
+          msg = "Erro ao enviar email. Tente novamente.";
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,10 +71,14 @@ class _TelaEsqueciState extends State<TelaEsqueci> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro inesperado: $e")),
+        const SnackBar(
+          content: Text("Erro inesperado. Tente novamente."),
+        ),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
