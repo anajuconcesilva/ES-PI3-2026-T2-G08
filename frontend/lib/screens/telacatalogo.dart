@@ -583,9 +583,12 @@ class _BottomNav extends StatelessWidget {
             label: "Valorização",
           ),
 
-          const _Nav(
+          _Nav(
             icon: Icons.store,
             label: "Negociar",
+            onTap: () {
+              Navigator.pushNamed(context, '/balcao');
+            },
           ),
         ],
       ),

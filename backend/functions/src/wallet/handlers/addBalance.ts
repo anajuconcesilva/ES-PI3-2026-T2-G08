@@ -39,12 +39,17 @@ export const addBalance = onCall(async (request) => {
   }
 
   // =====================
+  // CONVERTER PARA CENTAVOS
+  // =====================
+  const valueInCents = Math.round(value * 100);
+
+  // =====================
   // ATUALIZAR SALDO
   // =====================
 
   await addBalanceToWallet(
     user.uid,
-    value
+    valueInCents
   );
 
   // =====================
@@ -61,7 +66,7 @@ export const addBalance = onCall(async (request) => {
   await createTransaction({
     userId: user.uid,
     type: "deposit",
-    amount: value,
+    amount: valueInCents,
     createdAt: new Date(),
   });
 

@@ -10,6 +10,8 @@ import {
   updateWallet,
 } from "../repositories/walletRepository";
 
+import { createTransaction } from "../../transactions/repositories/transactionRepository";
+
 export const buyToken = onCall(async (request) => {
 
   const user = requireAuthenticatedUser(request);
@@ -84,6 +86,15 @@ export const buyToken = onCall(async (request) => {
   }
 
   await updateWallet(user.uid, wallet);
+
+  await createTransaction({
+    userId: user.uid,
+    type: "buy",
+    startupId,
+    quantity,
+    amount: total,
+    createdAt: new Date(),
+  });
 
   return {
     success: true,

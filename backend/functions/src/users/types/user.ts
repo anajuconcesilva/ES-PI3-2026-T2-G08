@@ -25,7 +25,10 @@ export interface User {
 
     wallet: {
         balance: number;
-        investments: Record<string, number>;
+        investments: Record<string, {
+            quantity: number;
+            investedValue: number;
+        }>;
     };
     createdAt: Timestamp;
 

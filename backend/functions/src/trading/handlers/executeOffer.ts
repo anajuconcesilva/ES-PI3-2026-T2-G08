@@ -1,16 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { getFirestore } from "firebase-admin/firestore";
 
 import { requireAuthenticatedUser } from "../../wallet/shared/auth";
-
-import {
-  getOfferById,
-  updateOffer,
-} from "../repositories/tradingRepository";
-
-import {
-  getWalletByUserId,
-  updateWallet,
-} from "../../wallet/repositories/walletRepository";
 
 export const executeOffer = onCall(async (request) => {
 
@@ -22,69 +13,114 @@ export const executeOffer = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Oferta inválida");
   }
 
-  const offer = await getOfferById(offerId);
+  const db = getFirestore();
 
-  if (!offer) {
-    throw new HttpsError("not-found", "Oferta não encontrada");
-  }
+  return await db.runTransaction(async (transaction) => {
+    const offerRef = db.collection("offers").doc(offerId);
+    const offerSnap = await transaction.get(offerRef);
 
-  if (offer.status !== "OPEN") {
-    throw new HttpsError("failed-precondition", "Oferta já executada");
-  }
+    if (!offerSnap.exists) {
+      throw new HttpsError("not-found", "Oferta não encontrada");
+    }
 
-  if (offer.userId === user.uid) {
-    throw new HttpsError("permission-denied", "Não pode executar sua própria oferta");
-  }
+    const offer = offerSnap.data() as any;
 
-  const sellerId = offer.type === "SELL" ? offer.userId : user.uid;
-  const buyerId = offer.type === "SELL" ? user.uid : offer.userId;
+    if (offer.status !== "OPEN") {
+      throw new HttpsError("failed-precondition", "Esta oferta já foi executada por outro usuário");
+    }
 
-  const sellerWallet = await getWalletByUserId(sellerId);
-  const buyerWallet = await getWalletByUserId(buyerId);
+    if (offer.userId === user.uid) {
+      throw new HttpsError("permission-denied", "Você não pode executar sua própria oferta");
+    }
 
-  if (!sellerWallet || !buyerWallet) {
-    throw new HttpsError("not-found", "Carteira não encontrada");
-  }
+    // Define quem é quem
+    const sellerId = offer.type === "SELL" ? offer.userId : user.uid;
+    const buyerId = offer.type === "SELL" ? user.uid : offer.userId;
 
-  const total = offer.quantity * offer.tokenPrice;
+    const sellerRef = db.collection("users").doc(sellerId);
+    const buyerRef = db.collection("users").doc(buyerId);
 
-  if (buyerWallet.balance < total) {
-    throw new HttpsError("failed-precondition", "Saldo insuficiente");
-  }
+    const sellerDoc = await transaction.get(sellerRef);
+    const buyerDoc = await transaction.get(buyerRef);
 
-  const sellerInvestment = sellerWallet.investments[offer.startupId];
+    if (!sellerDoc.exists || !buyerDoc.exists) {
+      throw new HttpsError("not-found", "Carteira de um dos envolvidos não encontrada");
+    }
 
-  if (!sellerInvestment || sellerInvestment.quantity < offer.quantity) {
-    throw new HttpsError("failed-precondition", "Tokens insuficientes");
-  }
+    const sellerData = sellerDoc.data()!;
+    const buyerData = buyerDoc.data()!;
 
-  buyerWallet.balance -= total;
-  sellerWallet.balance += total;
+    const sellerWallet = sellerData.wallet || { balance: 0, investments: {} };
+    const buyerWallet = buyerData.wallet || { balance: 0, investments: {} };
 
-  sellerInvestment.quantity -= offer.quantity;
+    const total = offer.quantity * offer.tokenPrice;
 
-  const buyerInvestment = buyerWallet.investments[offer.startupId];
+    // Valida comprador
+    if (buyerWallet.balance < total) {
+      throw new HttpsError("failed-precondition", "O comprador não possui saldo suficiente");
+    }
 
-  if (buyerInvestment) {
-    buyerInvestment.quantity += offer.quantity;
-    buyerInvestment.investedValue += total;
-  } else {
-    buyerWallet.investments[offer.startupId] = {
-      quantity: offer.quantity,
-      investedValue: total,
-    };
-  }
+    // Valida vendedor (Suporte a formato antigo e novo)
+    const investment = sellerWallet.investments[offer.startupId];
+    if (!investment) {
+      throw new HttpsError("failed-precondition", "O vendedor não possui os tokens");
+    }
 
-  if (sellerInvestment.quantity === 0) {
-    delete sellerWallet.investments[offer.startupId];
-  }
+    const sellerQty = typeof investment === 'number' ? investment : investment.quantity;
 
-  await updateWallet(sellerId, sellerWallet);
-  await updateWallet(buyerId, buyerWallet);
+    if (sellerQty < offer.quantity) {
+      throw new HttpsError("failed-precondition", "O vendedor não possui tokens suficientes");
+    }
 
-  await updateOffer(offerId, { status: "EXECUTED" });
+    // --- ATUALIZAÇÃO ---
 
-  return {
-    success: true,
-  };
+    // 1. Financeiro
+    buyerWallet.balance -= total;
+    sellerWallet.balance += total;
+
+    // 2. Tokens Vendedor
+    if (typeof investment === 'number') {
+        const newQty = investment - offer.quantity;
+        if (newQty === 0) delete sellerWallet.investments[offer.startupId];
+        else sellerWallet.investments[offer.startupId] = { quantity: newQty, investedValue: 0 };
+    } else {
+        investment.quantity -= offer.quantity;
+        if (investment.quantity === 0) delete sellerWallet.investments[offer.startupId];
+    }
+
+    // 3. Tokens Comprador
+    const bInv = buyerWallet.investments[offer.startupId];
+    if (bInv) {
+        if (typeof bInv === 'number') {
+            buyerWallet.investments[offer.startupId] = {
+                quantity: bInv + offer.quantity,
+                investedValue: total
+            };
+        } else {
+            bInv.quantity += offer.quantity;
+            bInv.investedValue += total;
+        }
+    } else {
+        buyerWallet.investments[offer.startupId] = {
+            quantity: offer.quantity,
+            investedValue: total,
+        };
+    }
+
+    // Gravações
+    transaction.update(sellerRef, { wallet: sellerWallet });
+    transaction.update(buyerRef, { wallet: buyerWallet });
+    transaction.update(offerRef, {
+      status: "EXECUTED",
+      executedAt: Date.now(),
+      executedBy: user.uid
+    });
+
+    // Logs
+    const logRef = db.collection("transactions");
+    transaction.set(logRef.doc(), { userId: buyerId, type: "buy", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: new Date() });
+    transaction.set(logRef.doc(), { userId: sellerId, type: "sell", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: new Date() });
+
+    return { success: true };
+  });
 });

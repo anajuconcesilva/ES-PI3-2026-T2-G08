@@ -68,13 +68,16 @@ class _TelaCarteiraState extends State<TelaCarteira> {
           transactionsResponse.data;
 
       setState(() {
-
         saldo =
-            (walletData["wallet"]?["balance"] ?? 0)
-                .toDouble();
+            (walletData["wallet"]?["balance"] ?? 0) / 100.0;
 
         historico =
-            transactionsData["data"] ?? [];
+            (transactionsData["data"] as List<dynamic>? ?? []).map((item) {
+              return {
+                ...item,
+                "amount": (item["amount"] ?? 0) / 100.0,
+              };
+            }).toList();
 
         carregando = false;
       });

@@ -54,12 +54,7 @@ export async function addBalance(
   await getDb()
     .collection("users")
     .doc(userId)
-    .set(
-      {
-        wallet: {
-          balance: FieldValue.increment(value),
-        },
-      },
-      { merge: true }
-    );
+    .update({
+      "wallet.balance": FieldValue.increment(value),
+    });
 }
