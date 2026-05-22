@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/intl.dart';
 
 class TelaCarteira extends StatefulWidget {
   const TelaCarteira({super.key});
@@ -16,11 +17,9 @@ class TelaCarteira extends StatefulWidget {
 
 class _TelaCarteiraState extends State<TelaCarteira> {
   bool mostrarSaldo = true;
-
   double saldo = 0.0;
-
   List<dynamic> historico = [];
-
+  List<Map<String, dynamic>> investimentos = [];
   bool carregando = true;
 
   @override
@@ -69,7 +68,28 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
       setState(() {
         saldo =
-            (walletData["wallet"]?["balance"] ?? 0) / 100.0;
+            (walletData["wallet"]?["balance"] ?? 0) / 100.00;
+
+        final investmentsMap =
+            walletData["wallet"]?["investments"] ?? {};
+
+        investimentos =
+            Map<String, dynamic>.from(investmentsMap)
+                .entries
+                .map((entry) {
+              final nome = entry.key;
+
+              final data =
+              Map<String, dynamic>.from(entry.value);
+
+              return {
+                "nome": nome,
+                "valor":
+                (data["investedValue"] ?? 0) / 100.0,
+                "quantidade":
+                data["quantity"] ?? 0,
+              };
+            }).toList();
 
         historico =
             (transactionsData["data"] as List<dynamic>? ?? []).map((item) {
@@ -391,34 +411,57 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
-                      child: Column(
-                        children: const [
 
-                          _InvestimentoItem(
-                            nome: "FinBlock",
-                            valor: "R\$ 1.200,00",
-                            porcentagem: "+ 2,35%",
-                            positivo: true,
-                          ),
+                      child: investimentos.isEmpty
+                          ? const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          children: [
 
-                          Divider(color: Color(0xFF1482C7)),
+                            Icon(
+                              Icons.wallet_outlined,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
 
-                          _InvestimentoItem(
-                            nome: "AgroVision",
-                            valor: "R\$ 1.150,00",
-                            porcentagem: "- 2,35%",
-                            positivo: false,
-                          ),
+                            SizedBox(height: 12),
 
-                          Divider(color: Color(0xFF1482C7)),
+                            Text(
+                              "Você ainda não possui investimentos",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          : Column(
+                        children: investimentos.map((item) {
 
-                          _InvestimentoItem(
-                            nome: "MedSync",
-                            valor: "R\$ 1.300,00",
-                            porcentagem: "+ 3,35%",
-                            positivo: true,
-                          ),
-                        ],
+                          return Column(
+                            children: [
+
+                              _InvestimentoItem(
+                                nome: item["nome"],
+
+                                valor:
+                                "R\$ ${item["valor"].toStringAsFixed(2)}",
+
+                                porcentagem:
+                                "${item["quantidade"]} tokens",
+
+                                positivo: true,
+                              ),
+
+                              const Divider(
+                                color: Color(0xFF1482C7),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
 
@@ -460,7 +503,34 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
-                      child: Column(
+
+                      child: historico.isEmpty
+                          ? const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+
+                            SizedBox(height: 12),
+
+                            Text(
+                              "Ainda não há transações",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          : Column(
                         children: historico.map((item) {
 
                           final type = item["type"];
@@ -494,7 +564,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                 valor:
                                 "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
 
-                                data: "Agora",
+                                data: item["createdAt"] != null
+                                    ? DateFormat(
+                                  'dd/MM/yyyy HH:mm',
+                                ).format(
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                    item["createdAt"]["_seconds"] * 1000,
+                                  ),
+                                )
+                                    : "",
 
                                 positivo: positivo,
                               ),
@@ -638,8 +716,11 @@ class _HistoricoItem extends StatelessWidget {
 
               Text(
                 valor,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  color: positivo
+                      ? Colors.green
+                      : Colors.red,
                 ),
               ),
 

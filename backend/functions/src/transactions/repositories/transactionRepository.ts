@@ -18,7 +18,7 @@ export const getTransactionsByUserId = async (
   const snapshot = await db
     .collection("transactions")
     .where("userId", "==", userId)
-    //.orderBy("createdAt", "desc")
+    .orderBy("createdAt", "desc")
     .get();
 
   return snapshot.docs.map((doc) => ({

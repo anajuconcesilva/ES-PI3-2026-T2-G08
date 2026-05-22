@@ -1,5 +1,6 @@
 import {
   onCall,
+  HttpsError,
 } from "firebase-functions/v2/https";
 
 import {
@@ -16,10 +17,25 @@ onCall(async (request) => {
   const user =
     requireAuthenticatedUser(request);
 
-  const transactions =
-    await getTransactionsByUserId(user.uid);
+  try {
+    const transactions =
+      await getTransactionsByUserId(
+        user.uid
+      );
 
-  return {
-    data: transactions,
-  };
+    return {
+      data: transactions,
+    };
+
+  } catch (error) {
+    console.error(
+      "Erro ao buscar transações:",
+      error
+    );
+
+    throw new HttpsError(
+      "internal",
+      "Erro ao carregar histórico"
+    );
+  }
 });
