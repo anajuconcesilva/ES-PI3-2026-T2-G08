@@ -30,8 +30,6 @@ export const getProfile = onCall(async (request) => {
       cpf: user.cpf,
       telefone: user.telefone,
       wallet: user.wallet,
-      mfaEnabled: user.mfaEnabled ?? false,
-      mfaVerified: user.mfaVerified ?? false,
     },
   };
 });

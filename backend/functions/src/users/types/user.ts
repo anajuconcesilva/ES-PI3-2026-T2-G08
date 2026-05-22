@@ -31,12 +31,6 @@ export interface User {
         }>;
     };
     createdAt: Timestamp;
-
-    mfaEnabled?: boolean;
-    mfaVerified?: boolean;
-    mfaCode?: string | null;
-    mfaExpiresAt?: number | null;
-    mfaVerifiedAt?: number | null;
 }
 
 /**

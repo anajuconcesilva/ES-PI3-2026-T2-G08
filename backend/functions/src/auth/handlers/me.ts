@@ -47,7 +47,7 @@ export const me = onCall(async (request) => {
     throw new HttpsError("not-found", "Usuário não encontrado");
   }
 
-  const userData = userDoc.data();
+  //const userData = userDoc.data();
 
   // =========================
   // 3. RETORNO
@@ -56,8 +56,6 @@ export const me = onCall(async (request) => {
     data: {
       uid,
       email: request.auth.token.email,
-      mfaEnabled: userData?.mfaEnabled ?? false,
-      mfaVerified: userData?.mfaVerified ?? false,
     },
   };
 });
