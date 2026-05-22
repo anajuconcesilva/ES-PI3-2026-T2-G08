@@ -3,9 +3,15 @@ import {
   HttpsError,
 } from "firebase-functions/v2/https";
 
-import { FieldValue } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
+
+import { db } from "../../startups/shared/firebase";
 
 import { requireAuthenticatedUser } from "../shared/auth";
+
+import {
+  getStartupById,
+} from "../../dashboard/repositories/dashboardRepository";
 
 import {
   getWalletByUserId,
@@ -89,13 +95,27 @@ export const buyToken = onCall(async (request) => {
 
   await updateWallet(user.uid, wallet);
 
+  await db
+    .collection("startups")
+    .doc(startupId)
+    .collection("investors")
+    .doc(user.uid)
+    .set({
+      uid: user.uid,
+      investedAt: Timestamp.now(),
+    }, { merge: true });
+
+  const startup =
+    await getStartupById(startupId);
+
   await createTransaction({
     userId: user.uid,
     type: "buy",
     startupId,
+    startupName: startup?.name ?? "Startup",
     quantity,
     amount: total,
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt: Timestamp.now(),
   });
 
   return {

@@ -3,14 +3,20 @@ import {
   HttpsError,
 } from "firebase-functions/v2/https";
 
-import { FieldValue } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 
 import { requireAuthenticatedUser } from "../shared/auth";
+
+import { db } from "../../startups/shared/firebase";
 
 import {
   getWalletByUserId,
   updateWallet,
 } from "../repositories/walletRepository";
+
+import {
+  getStartupById,
+} from "../../dashboard/repositories/dashboardRepository";
 
 import { createTransaction } from "../../transactions/repositories/transactionRepository";
 
@@ -85,17 +91,28 @@ export const sellToken = onCall(async (request) => {
 
   if (investment.quantity === 0) {
     delete wallet.investments[startupId];
+
+      await db
+        .collection("startups")
+        .doc(startupId)
+        .collection("investors")
+        .doc(user.uid)
+        .delete();
   }
 
   await updateWallet(user.uid, wallet);
+
+  const startup =
+    await getStartupById(startupId);
 
   await createTransaction({
     userId: user.uid,
     type: "sell",
     startupId,
+    startupName: startup?.name ?? "Startup",
     quantity,
     amount: total,
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt: Timestamp.now(),
   });
 
   return {

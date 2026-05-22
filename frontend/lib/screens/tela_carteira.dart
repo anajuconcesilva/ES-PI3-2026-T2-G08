@@ -1,12 +1,11 @@
 //CÓDIGO FEITO PELA ALUNA: Ana Júlia Conceição da Silva
 //RA: 25002592
+
 //Integração com o backend feita por Lucas David de Sousa
 //RA: 25895152
 
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class TelaCarteira extends StatefulWidget {
@@ -67,28 +66,69 @@ class _TelaCarteiraState extends State<TelaCarteira> {
       final transactionsData =
           transactionsResponse.data;
 
+      // =====================
+      // DASHBOARD / VALORIZAÇÃO
+      // =====================
+
+      final dashboardCallable =
+      functions.httpsCallable(
+        'getPortfolioValuation',
+      );
+
+      final dashboardResponse =
+      await dashboardCallable.call({
+        "period": "monthly",
+      });
+
+      final dashboardData =
+          dashboardResponse.data;
+
       setState(() {
         saldo =
-            (walletData["wallet"]?["balance"] ?? 0) / 100.00;
+            (walletData["wallet"]?["balance"] ?? 0) / 100.0;
 
         final investmentsMap =
             walletData["wallet"]?["investments"] ?? {};
+
+        final performanceList =
+        List<dynamic>.from(
+          dashboardData["data"]?["investments"] ?? [],
+        );
 
         investimentos =
             Map<String, dynamic>.from(investmentsMap)
                 .entries
                 .map((entry) {
-              final nome = entry.key;
+
+              final startupId = entry.key;
 
               final data =
               Map<String, dynamic>.from(entry.value);
 
+              final performance =
+              performanceList.firstWhere(
+                    (item) => item["startupId"] == startupId,
+                orElse: () => {},
+              );
+
+              final percentage =
+              (performance["variationPercent"] ?? 0)
+                  .toDouble();
+
               return {
-                "nome": nome,
+                "nome": performance["startupName"] ?? startupId,
+
                 "valor":
                 (data["investedValue"] ?? 0) / 100.0,
+
                 "quantidade":
                 data["quantity"] ?? 0,
+
+                "porcentagem":
+                percentage,
+
+                "positivo":
+                percentage >= 0,
               };
             }).toList();
 
@@ -439,9 +479,10 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                 "R\$ ${item["valor"].toStringAsFixed(2)}",
 
                                 porcentagem:
-                                "${item["quantidade"]} tokens",
+                                "${item["porcentagem"].toStringAsFixed(2)}%",
 
-                                positivo: true,
+                                positivo:
+                                item["positivo"],
                               ),
 
                               const Divider(
@@ -518,12 +559,12 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                           if (type == "buy") {
                             titulo =
-                            "Compra - ${item["startupName"]}";
+                            "Compra - ${item["startupName"] ?? "Startup"}";
                           }
 
                           if (type == "sell") {
                             titulo =
-                            "Venda - ${item["startupName"]}";
+                            "Venda - ${item["startupName"] ?? "Startup"}";
                           }
 
                           if (type == "deposit") {
@@ -598,20 +639,26 @@ class _InvestimentoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final cor =
+    positivo ? Colors.green : Colors.red;
+
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
 
           CircleAvatar(
-            radius: 22,
-            backgroundColor: const Color(0xFF1482C7),
-            child: Text(
-              nome[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            radius: 18,
+            backgroundColor:
+            const Color(0xFF1482C7),
+
+            child: Icon(
+              positivo
+                  ? Icons.trending_up
+                  : Icons.trending_down,
+              color: Colors.white,
+              size: 18,
             ),
           ),
 
@@ -620,7 +667,10 @@ class _InvestimentoItem extends StatelessWidget {
           Expanded(
             child: Text(
               nome,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
 
@@ -632,14 +682,17 @@ class _InvestimentoItem extends StatelessWidget {
                 valor,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
 
+              const SizedBox(height: 2),
+
               Text(
-                porcentagem,
+                "${positivo ? "+" : ""}$porcentagem",
                 style: TextStyle(
-                  color:
-                  positivo ? Colors.green : Colors.red,
+                  color: cor,
+                  fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
               ),
@@ -701,15 +754,16 @@ class _HistoricoItem extends StatelessWidget {
                 valor,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: positivo
-                      ? Colors.green
-                      : Colors.red,
+                  color:
+                  positivo ? Colors.green : Colors.red,
                 ),
               ),
 
               Text(
                 data,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(
+                  fontSize: 12,
+                ),
               ),
             ],
           )
