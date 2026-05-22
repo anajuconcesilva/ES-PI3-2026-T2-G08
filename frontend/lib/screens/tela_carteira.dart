@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class TelaCarteira extends StatefulWidget {
@@ -414,28 +415,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                       child: investimentos.isEmpty
                           ? const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-
-                            Icon(
-                              Icons.wallet_outlined,
-                              size: 50,
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Text(
+                            "Você ainda não possui investimentos",
+                            style: TextStyle(
                               color: Colors.grey,
+                              fontSize: 15,
                             ),
-
-                            SizedBox(height: 12),
-
-                            Text(
-                              "Você ainda não possui investimentos",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       )
                           : Column(
@@ -506,28 +494,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                       child: historico.isEmpty
                           ? const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 50,
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Text(
+                            "Ainda não há transações",
+                            style: TextStyle(
                               color: Colors.grey,
+                              fontSize: 15,
                             ),
-
-                            SizedBox(height: 12),
-
-                            Text(
-                              "Ainda não há transações",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       )
                           : Column(
@@ -565,13 +540,21 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                 "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
 
                                 data: item["createdAt"] != null
-                                    ? DateFormat(
-                                  'dd/MM/yyyy HH:mm',
-                                ).format(
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                    item["createdAt"]["_seconds"] * 1000,
-                                  ),
-                                )
+                                    ? (() {
+                                  final createdAt = Map<String, dynamic>.from(
+                                    item["createdAt"],
+                                  );
+
+                                  final seconds = createdAt["_seconds"] ?? 0;
+
+                                  return DateFormat(
+                                    'dd/MM/yyyy HH:mm',
+                                  ).format(
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                      seconds * 1000,
+                                    ),
+                                  );
+                                })()
                                     : "",
 
                                 positivo: positivo,
