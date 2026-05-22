@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
-
 import { requireAuthenticatedUser } from "../../wallet/shared/auth";
+import { FieldValue } from "firebase-admin/firestore";
 
 export const executeOffer = onCall(async (request) => {
 
@@ -107,19 +107,26 @@ export const executeOffer = onCall(async (request) => {
         };
     }
 
+    const startupRef = db.collection("startups").doc(offer.startupId);
+
     // Gravações
     transaction.update(sellerRef, { wallet: sellerWallet });
     transaction.update(buyerRef, { wallet: buyerWallet });
     transaction.update(offerRef, {
       status: "EXECUTED",
-      executedAt: Date.now(),
+      executedAt: FieldValue.serverTimestamp(),
       executedBy: user.uid
+    });
+
+    transaction.update(startupRef, {
+      currentTokenPriceCents: offer.tokenPrice,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     // Logs
     const logRef = db.collection("transactions");
-    transaction.set(logRef.doc(), { userId: buyerId, type: "buy", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: new Date() });
-    transaction.set(logRef.doc(), { userId: sellerId, type: "sell", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: new Date() });
+    transaction.set(logRef.doc(), { userId: buyerId, type: "buy", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: FieldValue.serverTimestamp() });
+    transaction.set(logRef.doc(), { userId: sellerId, type: "sell", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: FieldValue.serverTimestamp() });
 
     return { success: true };
   });

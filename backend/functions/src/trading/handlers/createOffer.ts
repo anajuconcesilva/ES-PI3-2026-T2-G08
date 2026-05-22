@@ -1,5 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-
+import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser } from "../../wallet/shared/auth";
 import { createOffer as createOfferRepository } from "../repositories/tradingRepository";
 import { getWalletByUserId } from "../../wallet/repositories/walletRepository";
@@ -50,7 +50,7 @@ export const createOffer = onCall(async (request) => {
     quantity,
     tokenPrice,
     status: "OPEN",
-    createdAt: Date.now(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 
   return {

@@ -1,3 +1,8 @@
+import {
+  Timestamp,
+  FieldValue
+} from "firebase-admin/firestore";
+
 export type TransactionType =
   | "deposit"
   | "buy"
@@ -10,5 +15,5 @@ export interface Transaction {
   startupName?: string;
   quantity?: number;
   amount: number;
-  createdAt: Date;
+  createdAt: Timestamp | FieldValue;
 }

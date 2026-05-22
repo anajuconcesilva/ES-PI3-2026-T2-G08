@@ -3,6 +3,8 @@ import {
   HttpsError,
 } from "firebase-functions/v2/https";
 
+import { FieldValue } from "firebase-admin/firestore";
+
 import { requireAuthenticatedUser } from "../shared/auth";
 
 import {
@@ -67,7 +69,7 @@ export const addBalance = onCall(async (request) => {
     userId: user.uid,
     type: "deposit",
     amount: valueInCents,
-    createdAt: new Date(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 
   return {

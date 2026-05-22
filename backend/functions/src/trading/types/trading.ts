@@ -1,3 +1,5 @@
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
+
 export type OfferType = "BUY" | "SELL";
 
 export type OfferStatus = "OPEN" | "EXECUTED";
@@ -10,5 +12,8 @@ export interface Offer {
   quantity: number;
   tokenPrice: number;
   status: OfferStatus;
-  createdAt: number;
+
+  createdAt: Timestamp | FieldValue;
+  executedAt?: Timestamp | FieldValue;
+  executedBy?: string;
 }
