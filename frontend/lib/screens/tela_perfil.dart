@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../usuario_model.dart';
 import '../usuario_server.dart';
+import 'dart:async';
 
 class TelaPerfil extends StatefulWidget {
   const TelaPerfil({super.key});
@@ -13,11 +14,481 @@ class TelaPerfil extends StatefulWidget {
 class _TelaPerfilState extends State<TelaPerfil> {
   late Future<Usuario?> futureUsuario;
   bool mfaAtivo = false;
+  bool mfaLoading = false;
 
   @override
   void initState() {
     super.initState();
     futureUsuario = UsuarioService.fetchUsuario();
+    _carregarStatusMfa();
+  }
+
+  Future<void> _reauthenticateUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == null) {
+      throw Exception("Usuário não autenticado");
+    }
+
+    final senhaController = TextEditingController();
+
+    final senha = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirme sua senha"),
+          content: TextField(
+            controller: senhaController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: "Senha",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, senhaController.text);
+              },
+              child: const Text("Confirmar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (senha == null || senha.isEmpty) {
+      throw Exception("Senha não informada");
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: senha,
+    );
+
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  Future<void> _reauthenticateUserWithMfa() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == null) {
+      throw Exception("Usuário não autenticado");
+    }
+
+    final senhaController = TextEditingController();
+
+    final senha = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirme sua senha"),
+          content: TextField(
+            controller: senhaController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: "Senha",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, senhaController.text);
+              },
+              child: const Text("Confirmar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (senha == null || senha.isEmpty) {
+      throw Exception("Senha não informada");
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: senha,
+    );
+
+    try {
+
+      await user.reauthenticateWithCredential(
+        credential,
+      );
+
+    } on FirebaseAuthMultiFactorException catch (e) {
+
+      final resolver = e.resolver;
+
+      final hints = resolver.hints;
+
+      if (hints.isEmpty) {
+        throw Exception("Nenhum fator MFA encontrado");
+      }
+
+      final phoneHint = hints.first as PhoneMultiFactorInfo;
+
+      String? verificationId;
+
+      final completer = Completer<void>();
+
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        multiFactorSession: resolver.session,
+        multiFactorInfo: phoneHint,
+
+        verificationCompleted: (credential) {},
+
+        verificationFailed: (FirebaseAuthException error) {
+          if (!completer.isCompleted) {
+            completer.completeError(
+              Exception(error.message),
+            );
+          }
+        },
+
+        codeSent: (String verId, int? resendToken) {
+          verificationId = verId;
+
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        },
+
+        codeAutoRetrievalTimeout: (String verId) {},
+      );
+
+      await completer.future;
+
+      if (verificationId == null) {
+        throw Exception("Erro ao enviar código MFA");
+      }
+
+      final codigoController = TextEditingController();
+
+      final codigo = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Código MFA"),
+            content: TextField(
+              controller: codigoController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: "123456",
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancelar"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(
+                    context,
+                    codigoController.text,
+                  );
+                },
+                child: const Text("Confirmar"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (codigo == null || codigo.isEmpty) {
+        throw Exception("Código não informado");
+      }
+
+      final phoneCredential = PhoneAuthProvider.credential(
+        verificationId: verificationId!,
+        smsCode: codigo,
+      );
+
+      final assertion = PhoneMultiFactorGenerator.getAssertion(
+        phoneCredential,
+      );
+
+      await resolver.resolveSignIn(assertion);
+    }
+  }
+
+  Future<void> _ativarMfa() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("Usuário não autenticado");
+    }
+
+    // =========================
+    // 1. REAUTENTICAR
+    // =========================
+    await _reauthenticateUser();
+
+    // =========================
+    // 2. PEDIR TELEFONE
+    // =========================
+    final telefoneController = TextEditingController();
+
+    final telefone = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Número de telefone"),
+          content: TextField(
+            controller: telefoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              hintText: "+5511999999999",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, telefoneController.text);
+              },
+              child: const Text("Continuar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (telefone == null || telefone.isEmpty) {
+      throw Exception("Telefone não informado");
+    }
+
+    String telefoneFormatado = telefone;
+
+    if (!telefone.startsWith("+")) {
+      telefoneFormatado = "+$telefone";
+    }
+
+    // =========================
+    // 3. MFA SESSION
+    // =========================
+    final multiFactorSession = await user.multiFactor.getSession();
+
+    // =========================
+    // 4. ENVIAR SMS
+    // =========================
+    String? verificationId;
+
+    final completer = Completer<void>();
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: telefoneFormatado,
+      multiFactorSession: multiFactorSession,
+
+      verificationCompleted: (PhoneAuthCredential credential) {},
+
+      verificationFailed: (FirebaseAuthException e) {
+        if (!completer.isCompleted) {
+          completer.completeError(
+            Exception(e.message),
+          );
+        }
+      },
+
+      codeSent: (String verId, int? resendToken) {
+        verificationId = verId;
+
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      },
+
+      codeAutoRetrievalTimeout: (String verId) {},
+    );
+
+    await completer.future;
+
+    if (verificationId == null) {
+      throw Exception("Não foi possível enviar o SMS");
+    }
+
+    // =========================
+    // 5. PEDIR CÓDIGO SMS
+    // =========================
+    final codigoController = TextEditingController();
+
+    final codigo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Código SMS"),
+          content: TextField(
+            controller: codigoController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: "123456",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, codigoController.text);
+              },
+              child: const Text("Verificar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (codigo == null || codigo.isEmpty) {
+      throw Exception("Código não informado");
+    }
+
+    // =========================
+    // 6. CRIAR CREDENTIAL
+    // =========================
+    final phoneAuthCredential = PhoneAuthProvider.credential(
+      verificationId: verificationId!,
+      smsCode: codigo,
+    );
+
+    // =========================
+    // 7. MFA ASSERTION
+    // =========================
+    final assertion = PhoneMultiFactorGenerator.getAssertion(
+      phoneAuthCredential,
+    );
+
+    // =========================
+    // 8. FINALIZAR MFA
+    // =========================
+    await user.multiFactor.enroll(
+      assertion,
+      displayName: telefone,
+    );
+
+    // =========================
+    // 9. ATUALIZAR UI
+    // =========================
+    setState(() {
+      mfaAtivo = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("MFA ativado com sucesso"),
+      ),
+    );
+  }
+
+  Future<void> _desativarMfa() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("Usuário não autenticado");
+    }
+
+    // =========================
+    // REAUTENTICAR
+    // =========================
+    await _reauthenticateUserWithMfa();
+
+    // =========================
+    // PEGAR FATORES
+    // =========================
+    final fatores = await user.multiFactor.getEnrolledFactors();
+
+    if (fatores.isEmpty) {
+      throw Exception("Nenhum MFA cadastrado");
+    }
+
+    // =========================
+    // REMOVER TODOS OS FATORES
+    // =========================
+    for (final fator in fatores) {
+      await user.multiFactor.unenroll(
+        multiFactorInfo: fator,
+      );
+    }
+
+    // =========================
+    // ATUALIZAR UI
+    // =========================
+    setState(() {
+      mfaAtivo = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("MFA desativado com sucesso"),
+      ),
+    );
+  }
+
+  Future<void> _carregarStatusMfa() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final fatores = await user.multiFactor.getEnrolledFactors();
+
+    setState(() {
+      mfaAtivo = fatores.isNotEmpty;
+    });
+  }
+
+  void _mostrarLoading(String texto) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                ),
+              ),
+
+              const SizedBox(width: 20),
+
+              Expanded(
+                child: Text(
+                  texto,
+                  style: const TextStyle(
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _fecharLoading() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _sairDaConta() async {
@@ -172,8 +643,35 @@ class _TelaPerfilState extends State<TelaPerfil> {
                               Switch(
                                 value: mfaAtivo,
                                 activeColor: azul,
-                                onChanged: (value) {
-                                  setState(() => mfaAtivo = value);
+                                onChanged: mfaLoading
+                                    ? null
+                                    : (value) async {
+                                  setState(() => mfaLoading = true);
+
+                                  try {
+                                    _mostrarLoading(
+                                      value
+                                          ? "Ativando MFA..."
+                                          : "Desativando MFA...",
+                                    );
+
+                                    if (value) {
+                                      await _ativarMfa();
+                                    } else {
+                                      await _desativarMfa();
+                                    }
+
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Erro: $e"),
+                                      ),
+                                    );
+
+                                  } finally {
+                                    _fecharLoading();
+                                    setState(() => mfaLoading = false);
+                                  }
                                 },
                               ),
                             ],

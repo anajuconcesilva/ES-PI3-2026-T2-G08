@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -27,11 +28,46 @@ class _TelaLoginState extends State<TelaLogin> {
         password: senhaController.text.trim(),
       );
 
+      final user = FirebaseAuth.instance.currentUser;
+
+      await user?.reload();
+
+      if (!(user?.emailVerified ?? false)) {
+
+        await FirebaseAuth.instance.signOut();
+
+        throw FirebaseAuthException(
+          code: 'email-not-verified',
+          message: 'Verifique seu email antes de entrar.',
+        );
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login realizado com sucesso")),
       );
 
       Navigator.pushReplacementNamed(context, '/geral');
+
+    } on FirebaseAuthMultiFactorException catch (e) {
+
+      try {
+        await _resolverMfaLogin(e);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login MFA realizado com sucesso"),
+          ),
+        );
+
+        Navigator.pushReplacementNamed(context, '/geral');
+
+      } catch (err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro MFA: $err"),
+          ),
+        );
+      }
 
     } on FirebaseAuthException catch (e) {
       String msg = "Erro ao fazer login";
@@ -42,6 +78,8 @@ class _TelaLoginState extends State<TelaLogin> {
         msg = "Senha incorreta";
       } else if (e.code == 'invalid-email') {
         msg = "Email inválido";
+      } else if (e.code == 'email-not-verified') {
+        msg = "Verifique seu email antes de entrar";
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +92,103 @@ class _TelaLoginState extends State<TelaLogin> {
     } finally {
       setState(() => isLoading = false);
     }
+  }
+
+  Future<void> _resolverMfaLogin(
+      FirebaseAuthMultiFactorException e,
+      ) async {
+    final resolver = e.resolver;
+
+    final hints = resolver.hints;
+
+    if (hints.isEmpty) {
+      throw Exception("Nenhum fator MFA encontrado");
+    }
+
+    final phoneHint = hints.first as PhoneMultiFactorInfo;
+
+    String? verificationId;
+
+    final completer = Completer<void>();
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      multiFactorSession: resolver.session,
+      multiFactorInfo: phoneHint,
+
+      verificationCompleted: (credential) {},
+
+      verificationFailed: (FirebaseAuthException error) {
+        if (!completer.isCompleted) {
+          completer.completeError(
+            Exception(error.message),
+          );
+        }
+      },
+
+      codeSent: (String verId, int? resendToken) {
+        verificationId = verId;
+
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      },
+
+      codeAutoRetrievalTimeout: (String verId) {},
+    );
+
+    await completer.future;
+
+    if (verificationId == null) {
+      throw Exception("Erro ao enviar código MFA");
+    }
+
+    final codigoController = TextEditingController();
+
+    final codigo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Código MFA"),
+          content: TextField(
+            controller: codigoController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: "123456",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  codigoController.text,
+                );
+              },
+              child: const Text("Confirmar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (codigo == null || codigo.isEmpty) {
+      throw Exception("Código não informado");
+    }
+
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId!,
+      smsCode: codigo,
+    );
+
+    final assertion = PhoneMultiFactorGenerator.getAssertion(
+      credential,
+    );
+
+    await resolver.resolveSignIn(assertion);
   }
 
   @override

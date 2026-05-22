@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
@@ -52,9 +53,30 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       final data = Map<String, dynamic>.from(result.data);
 
+      // =========================
+      // LOGIN AUTOMÁTICO
+      // =========================
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text.trim(),
+      );
+
+      // =========================
+      // ENVIAR VERIFICAÇÃO
+      // =========================
+      await FirebaseAuth.instance.currentUser
+          ?.sendEmailVerification();
+
+      // =========================
+      // LOGOUT
+      // =========================
+      await FirebaseAuth.instance.signOut();
+
       print(data);
 
-      final message = data['data']?['message'] ?? 'Cadastro realizado';
+      final message =
+          "Cadastro realizado com sucesso.\n"
+          "Verifique seu email antes de fazer login.";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
