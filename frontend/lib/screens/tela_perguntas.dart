@@ -1,15 +1,17 @@
 // tela feita pela aluna marilia santos RA 25014905
+
 import 'package:flutter/material.dart';
 import '../pergunta_model.dart';
 import '../question_service.dart';
 import 'midia_documentos.dart';
 
 class TelaPerguntas extends StatefulWidget {
+
   final String startupId;
 
   const TelaPerguntas({
     super.key,
-    required this.startupId,
+    this.startupId = '',
   });
 
   @override
@@ -53,13 +55,16 @@ class _TelaPerguntasState
   }
 
   Future<void> _enviarPergunta() async {
-    final texto = _controller.text.trim();
+
+    final texto =
+    _controller.text.trim();
 
     if (texto.isEmpty) return;
 
     setState(() => _enviando = true);
 
     try {
+
       await QuestionService().enviarPergunta(
         widget.startupId,
         texto,
@@ -67,27 +72,41 @@ class _TelaPerguntasState
       );
 
       _controller.clear();
+
       _recarregar();
 
       if (mounted) {
+
         ScaffoldMessenger.of(context).showSnackBar(
+
           const SnackBar(
-            content: Text("Pergunta enviada com sucesso!"),
+            content: Text(
+              "Pergunta enviada com sucesso!",
+            ),
           ),
         );
       }
+
     } catch (e) {
+
       print("ERRO AO ENVIAR: $e");
 
       if (mounted) {
+
         ScaffoldMessenger.of(context).showSnackBar(
+
           SnackBar(
-            content: Text("Erro: $e"),
+            content: Text(
+              "Erro: $e",
+            ),
           ),
         );
       }
+
     } finally {
+
       if (mounted) {
+
         setState(() => _enviando = false);
       }
     }
@@ -120,6 +139,7 @@ class _TelaPerguntasState
             Expanded(
               child:
               FutureBuilder<QuestionResponse>(
+
                 future:
                 futurePerguntas,
 
@@ -128,10 +148,8 @@ class _TelaPerguntasState
                     snapshot,
                     ) {
 
-                  if (snapshot
-                      .connectionState ==
-                      ConnectionState
-                          .waiting) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
 
                     return const Center(
                       child:
@@ -139,8 +157,7 @@ class _TelaPerguntasState
                     );
                   }
 
-                  if (snapshot
-                      .hasError) {
+                  if (snapshot.hasError) {
 
                     return Center(
                       child: Text(
@@ -149,15 +166,19 @@ class _TelaPerguntasState
                     );
                   }
 
-                  final response = snapshot.data!;
-                  final perguntas = response.perguntas;
-                  final podePrivada = response.canReadPrivateQuestions;
+                  final response =
+                  snapshot.data!;
+
+                  final perguntas =
+                      response.perguntas;
+
+                  final podePrivada =
+                      response.canReadPrivateQuestions;
 
                   final publicas =
                   perguntas.where(
                         (p) =>
-                    p.publica ==
-                        true,
+                    p.publica == true,
                   ).toList();
 
                   return SingleChildScrollView(
@@ -188,8 +209,7 @@ class _TelaPerguntasState
 
                       child: Column(
                         crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                        CrossAxisAlignment.start,
 
                         children: [
 
@@ -263,7 +283,6 @@ class _TelaPerguntasState
                                       FontWeight.bold,
                                     ),
                                   ),
-
                                 ],
                               ),
                             ),
@@ -277,8 +296,7 @@ class _TelaPerguntasState
 
                             child: Column(
                               crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
+                              CrossAxisAlignment.start,
 
                               children: [
 
@@ -317,8 +335,7 @@ class _TelaPerguntasState
                                   height: 20,
                                 ),
 
-                                if (publicas
-                                    .isEmpty)
+                                if (publicas.isEmpty)
 
                                   const Text(
                                     "Nenhuma pergunta pública ainda.",
@@ -373,8 +390,7 @@ class _TelaPerguntasState
 
                                   child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment
-                                        .start,
+                                    CrossAxisAlignment.start,
 
                                     children: [
 
@@ -414,6 +430,7 @@ class _TelaPerguntasState
 
                                       const Text(
                                         "Perguntas privadas são exclusivas para investidores",
+
                                         style: TextStyle(
                                           fontSize: 12,
                                         ),
@@ -423,62 +440,104 @@ class _TelaPerguntasState
                                         height: 16,
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-
                                       Container(
-                                        margin: const EdgeInsets.only(bottom: 16),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 12,
+                                        margin:
+                                        const EdgeInsets.only(
+                                          bottom: 16,
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.35),
-                                          borderRadius: BorderRadius.circular(12),
+
+                                        padding:
+                                        const EdgeInsets.symmetric(
+                                          horizontal:
+                                          14,
+
+                                          vertical:
+                                          12,
                                         ),
+
+                                        decoration:
+                                        BoxDecoration(
+                                          color:
+                                          Colors.white.withOpacity(
+                                            0.35,
+                                          ),
+
+                                          borderRadius:
+                                          BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+
                                         child: Row(
                                           children: [
+
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+
                                                 children: [
+
                                                   const Text(
                                                     "Modo exclusivo",
-                                                    style: TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w600,
+
+                                                    style:
+                                                    TextStyle(
+                                                      fontSize:
+                                                      15,
+
+                                                      fontWeight:
+                                                      FontWeight.w600,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 4),
+
+                                                  const SizedBox(
+                                                    height: 4,
+                                                  ),
+
                                                   Text(
                                                     podePrivada
                                                         ? "Visível apenas para a equipe da startup"
                                                         : "Liberado somente para investidores",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.black54,
+
+                                                    style:
+                                                    const TextStyle(
+                                                      fontSize:
+                                                      12,
+
+                                                      color:
+                                                      Colors.black54,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
+
                                             Switch(
-                                              value: _privada,
-                                              onChanged: podePrivada
+                                              value:
+                                              _privada,
+
+                                              onChanged:
+                                              podePrivada
                                                   ? (value) {
+
                                                 setState(() {
+
                                                   _privada = value;
                                                 });
                                               }
                                                   : null,
-                                              activeColor: azul,
+
+                                              activeColor:
+                                              azul,
                                             ),
                                           ],
                                         ),
                                       ),
 
-                                      SizedBox(height: 12),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
 
                                       TextField(
                                         controller:
@@ -624,8 +683,7 @@ class _TelaPerguntasState
 
       child: Row(
         mainAxisAlignment:
-        MainAxisAlignment
-            .spaceAround,
+        MainAxisAlignment.spaceAround,
 
         children: [
 
@@ -680,7 +738,13 @@ class _TelaPerguntasState
             icon: Icons.store,
             label: "Negociar",
 
-            onTap: () {},
+            onTap: () {
+
+              Navigator.pushNamed(
+                context,
+                '/balcao',
+              );
+            },
           ),
         ],
       ),
@@ -706,8 +770,7 @@ class _TelaPerguntasState
 
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment
-              .start,
+          CrossAxisAlignment.start,
 
           children: [
 

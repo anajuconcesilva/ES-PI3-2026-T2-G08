@@ -27,22 +27,37 @@ class _TelaDetalhesInformaEsState
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  Future<void> _handleDirectTransaction(bool isBuy, int currentPriceCents) async {
+  Future<void> _handleDirectTransaction(
+      bool isBuy,
+      int currentPriceCents,
+      ) async {
     final quantityController = TextEditingController();
-    
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isBuy ? 'Comprar Tokens' : 'Vender Tokens'),
+        title: Text(
+          isBuy
+              ? 'Comprar Tokens'
+              : 'Vender Tokens',
+        ),
+
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+
           children: [
-            Text('Preço atual: R\$ ${(currentPriceCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}'),
+            Text(
+              'Preço atual: R\$ ${(currentPriceCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}',
+            ),
+
             const SizedBox(height: 16),
+
             TextField(
               controller: quantityController,
               keyboardType: TextInputType.number,
+
               decoration: const InputDecoration(
                 labelText: 'Quantidade',
                 border: OutlineInputBorder(),
@@ -50,26 +65,41 @@ class _TelaDetalhesInformaEsState
             ),
           ],
         ),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
+
           ElevatedButton(
             onPressed: () async {
-              final qty = int.tryParse(quantityController.text.trim()) ?? 0;
-              final messenger = ScaffoldMessenger.of(context);
-              final navigator = Navigator.of(context);
+              final qty = int.tryParse(
+                quantityController.text.trim(),
+              ) ??
+                  0;
+
+              final messenger =
+              ScaffoldMessenger.of(context);
+
+              final navigator =
+              Navigator.of(context);
 
               if (qty <= 0) {
                 messenger.showSnackBar(
-                  const SnackBar(content: Text('Quantidade inválida')),
+                  const SnackBar(
+                    content:
+                    Text('Quantidade inválida'),
+                  ),
                 );
+
                 return;
               }
 
               navigator.pop();
+
               if (!mounted) return;
+
               setState(() => _isLoading = true);
 
               try {
@@ -88,11 +118,17 @@ class _TelaDetalhesInformaEsState
                 }
 
                 messenger.showSnackBar(
-                  SnackBar(content: Text('${isBuy ? 'Compra' : 'Venda'} realizada com sucesso!')),
+                  SnackBar(
+                    content: Text(
+                      '${isBuy ? 'Compra' : 'Venda'} realizada com sucesso!',
+                    ),
+                  ),
                 );
               } catch (e) {
                 messenger.showSnackBar(
-                  SnackBar(content: Text('Erro: $e')),
+                  SnackBar(
+                    content: Text('Erro: $e'),
+                  ),
                 );
               } finally {
                 if (mounted) {
@@ -100,6 +136,7 @@ class _TelaDetalhesInformaEsState
                 }
               }
             },
+
             child: const Text('Confirmar'),
           ),
         ],
@@ -109,106 +146,217 @@ class _TelaDetalhesInformaEsState
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    final currentUserId =
+        FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
+
       body: SafeArea(
         child: Stack(
           children: [
+
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('startups')
                   .doc(widget.startupId)
                   .snapshots(),
+
               builder: (context, snapshot) {
+
                 if (snapshot.hasError) {
-                  return const Center(child: Text("Erro ao carregar"));
+                  return const Center(
+                    child: Text(
+                      "Erro ao carregar",
+                    ),
+                  );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child:
+                    CircularProgressIndicator(),
+                  );
                 }
 
-                final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-                String nome = data["name"] ?? "Sem nome";
-                String descricaoCurta = data["shortDescription"] ?? "Sem descrição";
-                String? logoUrl = data["coverImageUrl"];
-                String stage = data["stage"] ?? "Desconhecido";
-                String sumario = data["executiveSummary"] ?? descricaoCurta;
-                int precoCents = _asInt(data["currentTokenPriceCents"]);
+                final data =
+                    snapshot.data!.data()
+                    as Map<String, dynamic>? ??
+                        {};
+
+                String nome =
+                    data["name"] ?? "Sem nome";
+
+                String descricaoCurta =
+                    data["shortDescription"] ??
+                        "Sem descrição";
+
+                String? logoUrl =
+                data["coverImageUrl"];
+
+                String stage =
+                    data["stage"] ??
+                        "Desconhecido";
+
+                String sumario =
+                    data["executiveSummary"] ??
+                        descricaoCurta;
+
+                int precoCents = _asInt(
+                  data["currentTokenPriceCents"],
+                );
 
                 return Column(
                   children: [
+
                     _buildHeader(context),
+
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding:
+                        const EdgeInsets.symmetric(
+                          horizontal: 24,
+                        ),
+
                         child: Column(
                           children: [
+
                             const SizedBox(height: 10),
+
                             _buildStageBadge(stage),
+
                             const SizedBox(height: 20),
-                            _buildLargeImage(logoUrl),
+
+                            _buildLargeImage(
+                              logoUrl,
+                            ),
+
                             const SizedBox(height: 20),
+
                             Text(
                               nome,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              textAlign:
+                              TextAlign.center,
+
+                              style:
+                              const TextStyle(
                                 fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                fontWeight:
+                                FontWeight.bold,
                               ),
                             ),
+
                             const SizedBox(height: 8),
+
                             Text(
                               descricaoCurta,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 13),
+                              textAlign:
+                              TextAlign.center,
+
+                              style:
+                              const TextStyle(
+                                fontSize: 13,
+                              ),
                             ),
+
                             const SizedBox(height: 25),
-                            
-                            // MEUS TOKENS
+
                             if (currentUserId != null)
-                              StreamBuilder<DocumentSnapshot>(
-                                stream: FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(currentUserId)
+                              StreamBuilder<
+                                  DocumentSnapshot>(
+                                stream:
+                                FirebaseFirestore
+                                    .instance
+                                    .collection(
+                                  'users',
+                                )
+                                    .doc(
+                                  currentUserId,
+                                )
                                     .snapshots(),
-                                builder: (context, userSnap) {
-                                  final userData = userSnap.data?.data() as Map<String, dynamic>?;
-                                  final wallet = userData?['wallet'] as Map<String, dynamic>?;
-                                  final investments = wallet?['investments'] as Map<String, dynamic>?;
-                                  final myInvestment = investments?[widget.startupId];
-                                  
+
+                                builder:
+                                    (context, userSnap) {
+
+                                  final userData =
+                                  userSnap.data
+                                      ?.data()
+                                  as Map<
+                                      String,
+                                      dynamic>?;
+
+                                  final wallet =
+                                  userData?['wallet']
+                                  as Map<
+                                      String,
+                                      dynamic>?;
+
+                                  final investments =
+                                  wallet?['investments']
+                                  as Map<
+                                      String,
+                                      dynamic>?;
+
+                                  final myInvestment =
+                                  investments?[
+                                  widget
+                                      .startupId];
+
                                   int myQty = 0;
-                                  if (myInvestment is int) {
-                                    myQty = myInvestment;
-                                  } else if (myInvestment is Map) {
-                                    myQty = _asInt(myInvestment['quantity']);
+
+                                  if (myInvestment
+                                  is int) {
+                                    myQty =
+                                        myInvestment;
+                                  } else if (myInvestment
+                                  is Map) {
+                                    myQty = _asInt(
+                                      myInvestment[
+                                      'quantity'],
+                                    );
                                   }
 
-                                  return _buildTokenCard(precoCents, myQty);
-                                }
+                                  return _buildTokenCard(
+                                    precoCents,
+                                    myQty,
+                                  );
+                                },
                               )
                             else
-                              _buildTokenCard(precoCents, 0),
+                              _buildTokenCard(
+                                precoCents,
+                                0,
+                              ),
 
                             const SizedBox(height: 25),
-                            _buildInfoCard(sumario, widget.startupId),
+
+                            _buildInfoCard(
+                              sumario,
+                              widget.startupId,
+                            ),
+
                             const SizedBox(height: 30),
                           ],
                         ),
                       ),
                     ),
+
                     _buildBottomNav(context),
                   ],
                 );
               },
             ),
+
             if (_isLoading)
               Container(
                 color: Colors.black26,
-                child: const Center(child: CircularProgressIndicator()),
+
+                child: const Center(
+                  child:
+                  CircularProgressIndicator(),
+                ),
               ),
           ],
         ),
@@ -226,16 +374,20 @@ class _TelaDetalhesInformaEsState
 
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+
+            onPressed: () =>
+                Navigator.pop(context),
           ),
 
           const Expanded(
             child: Center(
               child: Text(
                 "Detalhes da Startup",
+
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                  FontWeight.bold,
                 ),
               ),
             ),
@@ -250,14 +402,18 @@ class _TelaDetalhesInformaEsState
   Widget _buildStageBadge(String stage) {
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+      const EdgeInsets.symmetric(
         vertical: 10,
         horizontal: 30,
       ),
 
       decoration: BoxDecoration(
         color: const Color(0xFFDBD9D9),
-        borderRadius: BorderRadius.circular(15),
+
+        borderRadius:
+        BorderRadius.circular(15),
+
         border: Border.all(
           color: const Color(0xFF1482C7),
           width: 1.5,
@@ -266,6 +422,7 @@ class _TelaDetalhesInformaEsState
 
       child: Text(
         "Estágio: $stage",
+
         style: const TextStyle(
           fontSize: 16,
         ),
@@ -280,7 +437,9 @@ class _TelaDetalhesInformaEsState
       height: 180,
 
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+        BorderRadius.circular(20),
+
         border: Border.all(
           color: const Color(0xFF1482C7),
           width: 1.5,
@@ -288,9 +447,11 @@ class _TelaDetalhesInformaEsState
       ),
 
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+        BorderRadius.circular(18),
 
-        child: (url != null && url.isNotEmpty)
+        child:
+        (url != null && url.isNotEmpty)
             ? Image.network(
           url,
           fit: BoxFit.cover,
@@ -304,58 +465,100 @@ class _TelaDetalhesInformaEsState
     );
   }
 
-  Widget _buildTokenCard(int precoCents, int meusTokens) {
+  Widget _buildTokenCard(
+      int precoCents,
+      int meusTokens,
+      ) {
+
     return Container(
       padding: const EdgeInsets.all(20),
+
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
+
+        borderRadius:
+        BorderRadius.circular(20),
+
         border: Border.all(
           color: const Color(0xFF1482C7),
           width: 1.5,
         ),
       ),
+
       child: Column(
         children: [
+
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment:
+            MainAxisAlignment
+                .spaceBetween,
+
             children: [
+
               const Text(
                 "Meus Tokens:",
+
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                  FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
+
               _actionButton(
                 "Comprar",
                 const Color(0xFF1482C7),
-                () => _handleDirectTransaction(true, precoCents),
+
+                    () =>
+                    _handleDirectTransaction(
+                      true,
+                      precoCents,
+                    ),
               ),
             ],
           ),
+
           const SizedBox(height: 10),
+
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment:
+            MainAxisAlignment
+                .spaceBetween,
+
             children: [
+
               Text(
                 "$meusTokens",
+
                 style: const TextStyle(
                   fontSize: 45,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                  FontWeight.bold,
                 ),
               ),
+
               _actionButton(
                 "Vender",
                 Colors.red,
-                () => _handleDirectTransaction(false, precoCents),
+
+                    () =>
+                    _handleDirectTransaction(
+                      false,
+                      precoCents,
+                    ),
               ),
             ],
           ),
+
           const SizedBox(height: 8),
+
           Text(
             "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
           ),
         ],
       ),
@@ -363,27 +566,41 @@ class _TelaDetalhesInformaEsState
   }
 
   Widget _actionButton(
-    String label,
-    Color color,
-    VoidCallback onPressed,
-  ) {
+      String label,
+      Color color,
+      VoidCallback onPressed,
+      ) {
+
     return SizedBox(
       width: 120,
       height: 40,
+
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
+        style:
+        ElevatedButton.styleFrom(
           backgroundColor: color,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          foregroundColor:
+          Colors.white,
+
+          shape:
+          RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.circular(
+              10,
+            ),
           ),
         ),
-        onPressed: _isLoading ? null : onPressed,
+
+        onPressed:
+        _isLoading ? null : onPressed,
+
         child: Text(
           label,
+
           style: const TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+            FontWeight.bold,
           ),
         ),
       ),
@@ -400,7 +617,10 @@ class _TelaDetalhesInformaEsState
 
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
+
+        borderRadius:
+        BorderRadius.circular(20),
+
         border: Border.all(
           color: const Color(0xFF1482C7),
           width: 1.5,
@@ -420,7 +640,8 @@ class _TelaDetalhesInformaEsState
                 context,
 
                 MaterialPageRoute(
-                  builder: (context) =>
+                  builder:
+                      (context) =>
                       TelaSocietario(
                         startupId: id,
                       ),
@@ -429,56 +650,71 @@ class _TelaDetalhesInformaEsState
             },
 
             child: Container(
-              padding: const EdgeInsets.symmetric(
+              padding:
+              const EdgeInsets.symmetric(
                 vertical: 10,
                 horizontal: 15,
               ),
 
               decoration: BoxDecoration(
-                color: const Color(0xFFBDD7EE),
+                color:
+                const Color(0xFFBDD7EE),
 
                 borderRadius:
                 const BorderRadius.vertical(
-                  top: Radius.circular(18),
+                  top:
+                  Radius.circular(18),
                 ),
 
                 border: Border.all(
-                  color: const Color(0xFF1482C7),
+                  color:
+                  const Color(
+                    0xFF1482C7,
+                  ),
                 ),
               ),
 
               child: const Row(
                 mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+                MainAxisAlignment
+                    .spaceBetween,
 
                 children: [
 
                   Text(
                     "Informações",
+
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                      FontWeight.bold,
                     ),
                   ),
 
-                  Icon(Icons.arrow_forward),
+                  Icon(
+                    Icons.arrow_forward,
+                  ),
                 ],
               ),
             ),
           ),
 
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding:
+            const EdgeInsets.all(20),
 
             child: Column(
               crossAxisAlignment:
-              CrossAxisAlignment.start,
+              CrossAxisAlignment
+                  .start,
 
               children: [
 
                 const Text(
                   "Sumário Executivo:",
+
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                    FontWeight.bold,
                   ),
                 ),
 
@@ -486,6 +722,7 @@ class _TelaDetalhesInformaEsState
 
                 Text(
                   sumario,
+
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.4,
@@ -502,14 +739,16 @@ class _TelaDetalhesInformaEsState
   Widget _buildBottomNav(BuildContext context) {
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+      const EdgeInsets.symmetric(
         vertical: 12,
       ),
 
       decoration: const BoxDecoration(
         color: Color(0xFFE8E8E8),
 
-        borderRadius: BorderRadius.vertical(
+        borderRadius:
+        BorderRadius.vertical(
           top: Radius.circular(25),
         ),
       ),
@@ -537,7 +776,12 @@ class _TelaDetalhesInformaEsState
             label: "Startups",
             active: true,
 
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/catalogo',
+              );
+            },
           ),
 
           _NavItem(
@@ -556,14 +800,24 @@ class _TelaDetalhesInformaEsState
             icon: Icons.show_chart,
             label: "Valorização",
 
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/geral',
+              );
+            },
           ),
 
           _NavItem(
             icon: Icons.store,
             label: "Negociar",
 
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/balcao',
+              );
+            },
           ),
         ],
       ),
@@ -598,7 +852,9 @@ class _NavItem extends StatelessWidget {
 
           Icon(
             icon,
-            color: active
+
+            color:
+            active
                 ? const Color(0xFF1482C7)
                 : Colors.black,
           ),
@@ -611,7 +867,8 @@ class _NavItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
 
-              color: active
+              color:
+              active
                   ? const Color(0xFF1482C7)
                   : Colors.black,
             ),

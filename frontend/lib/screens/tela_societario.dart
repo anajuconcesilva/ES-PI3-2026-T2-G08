@@ -1,5 +1,5 @@
-// CÓDIGO FEITO PELA ALUNA: ANA JÚLIA CONCEIÇÃO DA SILVA
-// RA:25002592
+// CÓDIGO FEITO PELA ALUNO: DIOGO GONÇALVES TONHOSOLO
+//RA: 25894007
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -511,11 +511,17 @@ class _TelaSocietarioState
             onTap: () {},
           ),
 
+          // ALTERAÇÃO AQUI
           _NavItem(
             icon: Icons.store,
             label: "Negociar",
 
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/balcao',
+              );
+            },
           ),
         ],
       ),

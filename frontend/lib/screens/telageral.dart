@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mescla_invest_app/screens/tela_perguntas.dart';
 
 class TelaGeral extends StatelessWidget {
   const TelaGeral({super.key});
 
   static const List<String> imagens = [
-    "assets/images/company1.png",
-    "assets/images/company2.png",
-    "assets/images/company3.png",
+    "assets/images/company1.webp",
+    "assets/images/company2.webp",
+    "assets/images/company3.jpg",
   ];
 
   @override
@@ -200,13 +201,21 @@ class TelaGeral extends StatelessWidget {
                         mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
 
-                        children: const [
+                        children: [
 
                           _Action(
                             icon:
                             Icons.attach_money,
 
                             label: "Comprar",
+
+                            onTap: () {
+
+                              Navigator.pushNamed(
+                                context,
+                                '/balcao',
+                              );
+                            },
                           ),
 
                           _Action(
@@ -214,6 +223,14 @@ class TelaGeral extends StatelessWidget {
                             Icons.credit_card,
 
                             label: "Vender",
+
+                            onTap: () {
+
+                              Navigator.pushNamed(
+                                context,
+                                '/balcao',
+                              );
+                            },
                           ),
 
                           _Action(
@@ -221,6 +238,20 @@ class TelaGeral extends StatelessWidget {
                             Icons.chat_bubble,
 
                             label: "Perguntas",
+
+                            onTap: () {
+
+                              Navigator.push(
+                                context,
+
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                  const TelaPerguntas(
+                                    startupId: '1',
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -351,46 +382,52 @@ class _Action extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   const _Action({
     required this.icon,
     required this.label,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
 
-    return Column(
-      children: [
+    return GestureDetector(
+      onTap: onTap,
 
-        Container(
-          padding:
-          const EdgeInsets.all(14),
+      child: Column(
+        children: [
 
-          decoration: BoxDecoration(
-            color:
-            const Color(0xFFD6EEF7),
+          Container(
+            padding:
+            const EdgeInsets.all(14),
 
-            borderRadius:
-            BorderRadius.circular(14),
+            decoration: BoxDecoration(
+              color:
+              const Color(0xFFD6EEF7),
+
+              borderRadius:
+              BorderRadius.circular(14),
+            ),
+
+            child: Icon(
+              icon,
+              size: 22,
+            ),
           ),
 
-          child: Icon(
-            icon,
-            size: 22,
+          const SizedBox(height: 6),
+
+          Text(
+            label,
+
+            style: const TextStyle(
+              fontSize: 12,
+            ),
           ),
-        ),
-
-        const SizedBox(height: 6),
-
-        Text(
-          label,
-
-          style: const TextStyle(
-            fontSize: 12,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -507,8 +544,13 @@ class _BottomNav extends StatelessWidget {
           _NavIcon(
             icon: Icons.store,
             label: "Negociar",
+
             onTap: () {
-              Navigator.pushNamed(context, '/balcao');
+
+              Navigator.pushNamed(
+                context,
+                '/balcao',
+              );
             },
           ),
         ],

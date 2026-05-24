@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 
 class TelaInicio extends StatelessWidget {
-  const TelaInicio ({super.key});
+  const TelaInicio({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +36,18 @@ class TelaInicio extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Image.network(
-                    "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/aWcBwf6Kwt/s3ii9b48_expires_30_days.png",
+                  // LOGO
+                  Image.asset(
+                    "assets/images/wallet.png",
                     width: 80,
                     height: 100,
                   ),
+
                   const SizedBox(height: 20),
-                  Image.network(
-                    "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/aWcBwf6Kwt/mc464upo_expires_30_days.png",
+
+                  // NOME
+                  Image.asset(
+                    "assets/images/Mescla-logo.png",
                     width: 200,
                   ),
                 ],
@@ -70,9 +74,10 @@ class TelaInicio extends StatelessWidget {
                   ),
                   child: const Text(
                     "Login",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFFFFFF),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-
                   ),
                 ),
               ),
@@ -87,10 +92,13 @@ class TelaInicio extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/cadastro');                  },
+                    Navigator.pushNamed(context, '/cadastro');
+                  },
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFD7DEE2),
-                    side: const BorderSide(color: Color(0xFF1482C7)),
+                    side: const BorderSide(
+                      color: Color(0xFF1482C7),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
@@ -113,15 +121,19 @@ class TelaInicio extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.network(
-                  "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/aWcBwf6Kwt/8gz3bc2l_expires_30_days.png",
+                Image.asset(
+                  "assets/images/copy-icon.png",
                   width: 18,
                   height: 18,
                 ),
+
                 const SizedBox(width: 6),
+
                 const Text(
                   "2026 MesclaInvest",
-                  style: TextStyle(color: Color(0xFF858788)),
+                  style: TextStyle(
+                    color: Color(0xFF858788),
+                  ),
                 ),
               ],
             ),

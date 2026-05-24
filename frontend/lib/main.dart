@@ -7,6 +7,7 @@ import 'package:mescla_invest_app/screens/tela_carteira.dart';
 import 'package:mescla_invest_app/screens/tela_perfil.dart';
 import 'package:mescla_invest_app/screens/tela_balcao_detalhes.dart';
 import 'package:mescla_invest_app/screens/tela_balcao_lista.dart';
+import 'package:mescla_invest_app/screens/tela_perguntas.dart';
 import 'package:mescla_invest_app/screens/telaesqueci.dart';
 import 'package:mescla_invest_app/screens/telarecuperacao.dart';
 import 'package:mescla_invest_app/screens/telaredefinir.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/carteira': (_) => const TelaCarteira(),
         '/perfil': (_) => const TelaPerfil(),
         '/balcao': (_) => const TelaBalcaoLista(),
+        '/perguntas': (_) => const TelaPerguntas(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/balcao_detalhes') {

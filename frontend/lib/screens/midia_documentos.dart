@@ -639,11 +639,17 @@ class _TelaMidiaCompletaState
             onTap: () {},
           ),
 
+          // ALTERAÇÃO AQUI
           _NavItem(
             icon: Icons.store,
             label: "Negociar",
 
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/balcao',
+              );
+            },
           ),
         ],
       ),
