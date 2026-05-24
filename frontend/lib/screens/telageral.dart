@@ -533,12 +533,19 @@ class _BottomNav extends StatelessWidget {
             },
           ),
 
-          const _NavIcon(
+          _NavIcon(
             icon:
             Icons.show_chart,
 
             label:
             "Valorização",
+            onTap: () {
+
+              Navigator.pushNamed(
+                context,
+                '/valorizacao',
+              );
+            },
           ),
 
           _NavIcon(

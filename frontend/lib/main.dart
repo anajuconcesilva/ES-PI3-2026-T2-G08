@@ -16,6 +16,7 @@ import 'package:mescla_invest_app/screens/telacatalogo.dart';
 import 'screens/telainicio.dart';
 import 'screens/telalogin.dart';
 import 'screens/telacadastro.dart';
+import 'screens/tela_valorizacao.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/perfil': (_) => const TelaPerfil(),
         '/balcao': (_) => const TelaBalcaoLista(),
         '/perguntas': (_) => const TelaPerguntas(),
+        '/valorizacao': (_) => const TelaValorizacao(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/balcao_detalhes') {

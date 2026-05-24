@@ -1,4 +1,4 @@
-// CÓDIGO FEITO PELA ALUNO: DIOGO GONÇALVES TONHOSOLO
+// CÓDIGO FEITO PELO ALUNO: DIOGO GONÇALVES TONHOSOLO
 //RA: 25894007
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
