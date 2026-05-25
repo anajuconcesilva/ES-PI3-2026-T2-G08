@@ -73,117 +73,23 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
     }
   }
 
-  void _showCreateOfferDialog(bool isBuy) {
-    final quantityController = TextEditingController();
-    final priceController = TextEditingController();
-    bool isLoading = false;
-    bool dialogAberto = true;
-
-    showDialog(
+  Future<void> _showCreateOfferDialog(bool isBuy) async {
+    final offerCreated = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(isBuy ? 'Nova oferta de compra' : 'Nova oferta de venda'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: quantityController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Quantidade de tokens',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Preço por token (R\$)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      final navigator = Navigator.of(context);
-                      final messenger = ScaffoldMessenger.of(context);
-
-                      if (quantityController.text.isEmpty ||
-                          priceController.text.isEmpty) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('Preencha todos os campos'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      setState(() => isLoading = true);
-
-                      try {
-                        final quantity = int.parse(
-                          quantityController.text.trim(),
-                        );
-                        final price = _parseMoney(priceController.text);
-                        final priceCents = TradingService.convertToCents(price);
-
-                        if (quantity <= 0 || priceCents <= 0) {
-                          throw Exception(
-                            'Quantidade e preço devem ser maiores que zero',
-                          );
-                        }
-
-                        await TradingService.createOffer(
-                          startupId: widget.startupId,
-                          type: isBuy ? 'BUY' : 'SELL',
-                          quantity: quantity,
-                          tokenPrice: priceCents,
-                        );
-
-                        if (mounted) {
-                          dialogAberto = false;
-                          navigator.pop();
-                          messenger.showSnackBar(
-                            const SnackBar(
-                              content: Text('Oferta criada com sucesso!'),
-                            ),
-                          );
-                          _loadOffers();
-                        }
-                      } catch (e) {
-                        messenger.showSnackBar(
-                          SnackBar(content: Text('Erro: $e')),
-                        );
-                      } finally {
-                        if (dialogAberto) {
-                          setState(() => isLoading = false);
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Criar'),
-            ),
-          ],
-        ),
+      builder: (_) => _CreateOfferDialog(
+        startupId: widget.startupId,
+        isBuy: isBuy,
+        parseMoney: _parseMoney,
       ),
-    ).then((_) {
-      quantityController.dispose();
-      priceController.dispose();
-    });
+    );
+
+    if (!mounted || offerCreated != true) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Oferta criada com sucesso!')));
+    _loadOffers();
   }
 
   Future<void> _executeOffer(String offerId) async {
@@ -663,6 +569,129 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CreateOfferDialog extends StatefulWidget {
+  final String startupId;
+  final bool isBuy;
+  final double Function(String value) parseMoney;
+
+  const _CreateOfferDialog({
+    required this.startupId,
+    required this.isBuy,
+    required this.parseMoney,
+  });
+
+  @override
+  State<_CreateOfferDialog> createState() => _CreateOfferDialogState();
+}
+
+class _CreateOfferDialogState extends State<_CreateOfferDialog> {
+  final _quantityController = TextEditingController();
+  final _priceController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close({bool created = false}) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+    Navigator.of(context).pop(created);
+  }
+
+  Future<void> _createOffer() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (_quantityController.text.isEmpty || _priceController.text.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final quantity = int.parse(_quantityController.text.trim());
+      final price = widget.parseMoney(_priceController.text);
+      final priceCents = TradingService.convertToCents(price);
+
+      if (quantity <= 0 || priceCents <= 0) {
+        throw Exception('Quantidade e preço devem ser maiores que zero');
+      }
+
+      await TradingService.createOffer(
+        startupId: widget.startupId,
+        type: widget.isBuy ? 'BUY' : 'SELL',
+        quantity: quantity,
+        tokenPrice: priceCents,
+      );
+
+      await _close(created: true);
+    } catch (e) {
+      if (!mounted) return;
+
+      messenger.showSnackBar(SnackBar(content: Text('Erro: $e')));
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.isBuy ? 'Nova oferta de compra' : 'Nova oferta de venda',
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Quantidade de tokens',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Preço por token (R\$)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : _close,
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _createOffer,
+          child: _isLoading
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Criar'),
+        ),
+      ],
     );
   }
 }
