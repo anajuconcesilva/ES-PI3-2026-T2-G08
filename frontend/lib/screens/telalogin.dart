@@ -146,9 +146,6 @@ class _TelaLoginState extends State<TelaLogin> {
           content: TextField(
             controller: codigoController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: "123456",
-            ),
           ),
           actions: [
             TextButton(
