@@ -481,7 +481,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
       padding: const EdgeInsets.symmetric(vertical: 12),
 
       decoration: BoxDecoration(
-        color: active ? corAtiva.withOpacity(0.1) : Colors.grey.shade100,
+        color: active ? corAtiva.withValues(alpha: 0.1) : Colors.grey.shade100,
 
         borderRadius: BorderRadius.circular(10),
 
@@ -572,6 +572,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                     children: [
                       Expanded(
+                        flex: 3,
                         child: Text(
                           "Usuário",
 
@@ -583,6 +584,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                       ),
 
                       Expanded(
+                        flex: 2,
                         child: Text(
                           "Quantidade",
 
@@ -594,6 +596,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                       ),
 
                       Expanded(
+                        flex: 2,
                         child: Text(
                           "Preço(R\$)",
 
@@ -605,6 +608,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                       ),
 
                       Expanded(
+                        flex: 3,
                         child: Text(
                           "Total(R\$)",
 
@@ -618,27 +622,29 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   ),
                 ),
 
-                ...ofertasFiltered.map((offer) {
-                  final quantity = _asInt(offer['quantity']);
+                _OfferRowsScrollbar(
+                  children: ofertasFiltered.map((offer) {
+                    final quantity = _asInt(offer['quantity']);
 
-                  final tokenPrice = _asInt(offer['tokenPrice']) / 100.0;
+                    final tokenPrice = _asInt(offer['tokenPrice']) / 100.0;
 
-                  final total = quantity * tokenPrice;
+                    final total = quantity * tokenPrice;
 
-                  return _buildTableRow(
-                    'Usuário ${_shortUserId(offer['userId'])}',
+                    return _buildTableRow(
+                      'Usuário ${_shortUserId(offer['userId'])}',
 
-                    quantity.toString(),
+                      quantity.toString(),
 
-                    tokenPrice.toStringAsFixed(2).replaceAll('.', ','),
+                      tokenPrice.toStringAsFixed(2).replaceAll('.', ','),
 
-                    total.toStringAsFixed(2).replaceAll('.', ','),
+                      total.toStringAsFixed(2).replaceAll('.', ','),
 
-                    cor,
+                      cor,
 
-                    () => _executeOffer(offer['id'] ?? ''),
-                  );
-                }),
+                      () => _executeOffer(offer['id'] ?? ''),
+                    );
+                  }).toList(),
+                ),
               ],
             ),
           ),
@@ -666,41 +672,102 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
         children: [
           Expanded(
+            flex: 3,
             child: Text(user, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
+            flex: 2,
             child: Text(qtd, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
+            flex: 2,
             child: Text(preco, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
+            flex: 3,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
               children: [
-                Text(total, style: TextStyle(color: cor, fontSize: 11)),
-
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: Colors.blue,
+                Expanded(
+                  child: Text(
+                    total,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: cor, fontSize: 11),
                   ),
+                ),
 
-                  onPressed: onExecute,
-
-                  padding: EdgeInsets.zero,
-
-                  constraints: const BoxConstraints(),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: Colors.blue,
+                    ),
+                    onPressed: onExecute,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OfferRowsScrollbar extends StatefulWidget {
+  final List<Widget> children;
+
+  const _OfferRowsScrollbar({required this.children});
+
+  @override
+  State<_OfferRowsScrollbar> createState() => _OfferRowsScrollbarState();
+}
+
+class _OfferRowsScrollbarState extends State<_OfferRowsScrollbar> {
+  final _scrollController = ScrollController();
+  static const int _minOffersForScrollbar = 6;
+  static const double _rowHeight = 45;
+  static const double _maxHeight = 225;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contentHeight = widget.children.length * _rowHeight;
+    final shouldShowScrollbar =
+        widget.children.length >= _minOffersForScrollbar;
+    final listHeight = shouldShowScrollbar ? _maxHeight : contentHeight;
+
+    if (!shouldShowScrollbar) {
+      return Column(mainAxisSize: MainAxisSize.min, children: widget.children);
+    }
+
+    return SizedBox(
+      height: listHeight,
+      child: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        child: ListView(
+          controller: _scrollController,
+          padding: EdgeInsets.zero,
+          children: widget.children,
+        ),
       ),
     );
   }
