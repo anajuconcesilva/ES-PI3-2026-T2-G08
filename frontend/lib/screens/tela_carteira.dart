@@ -29,125 +29,113 @@ class _TelaCarteiraState extends State<TelaCarteira> {
     carregarCarteira();
   }
 
+  double _parseMoney(String value) {
+    return double.tryParse(
+          value.trim().replaceAll('.', '').replaceAll(',', '.'),
+        ) ??
+        0;
+  }
+
   Future<void> carregarCarteira() async {
-
     try {
-
-      final functions =
-          FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instance;
 
       // =====================
       // WALLET
       // =====================
 
-      final walletCallable =
-      functions.httpsCallable(
-        'getWallet',
-      );
+      final walletCallable = functions.httpsCallable('getWallet');
 
-      final walletResponse =
-      await walletCallable.call();
+      dynamic walletData;
 
-      final walletData =
-          walletResponse.data;
+      try {
+        final walletResponse = await walletCallable.call();
+
+        walletData = walletResponse.data;
+      } on FirebaseFunctionsException catch (e) {
+        if (e.code != 'not-found') {
+          rethrow;
+        }
+
+        walletData = {
+          "wallet": {"balance": 0, "investments": {}},
+        };
+      }
 
       // =====================
       // TRANSACTIONS
       // =====================
 
-      final transactionsCallable =
-      functions.httpsCallable(
-        'getTransactions',
-      );
+      final transactionsCallable = functions.httpsCallable('getTransactions');
 
-      final transactionsResponse =
-      await transactionsCallable.call();
+      final transactionsResponse = await transactionsCallable.call();
 
-      final transactionsData =
-          transactionsResponse.data;
+      final transactionsData = transactionsResponse.data;
 
       // =====================
       // DASHBOARD / VALORIZAÇÃO
       // =====================
 
-      final dashboardCallable =
-      functions.httpsCallable(
+      final dashboardCallable = functions.httpsCallable(
         'getPortfolioValuation',
       );
 
-      final dashboardResponse =
-      await dashboardCallable.call({
+      final dashboardResponse = await dashboardCallable.call({
         "period": "monthly",
       });
 
-      final dashboardData =
-          dashboardResponse.data;
+      final dashboardData = dashboardResponse.data;
+
+      if (!mounted) return;
 
       setState(() {
-        saldo =
-            (walletData["wallet"]?["balance"] ?? 0) / 100.0;
+        saldo = (walletData["wallet"]?["balance"] ?? 0) / 100.0;
 
-        final investmentsMap =
-            walletData["wallet"]?["investments"] ?? {};
+        final investmentsMap = walletData["wallet"]?["investments"] ?? {};
 
-        final performanceList =
-        List<dynamic>.from(
+        final performanceList = List<dynamic>.from(
           dashboardData["data"]?["investments"] ?? [],
         );
 
-        investimentos =
-            Map<String, dynamic>.from(investmentsMap)
-                .entries
-                .map((entry) {
+        investimentos = Map<String, dynamic>.from(investmentsMap).entries.map((
+          entry,
+        ) {
+          final startupId = entry.key;
 
-              final startupId = entry.key;
+          final data = Map<String, dynamic>.from(entry.value);
 
-              final data =
-              Map<String, dynamic>.from(entry.value);
+          final performance = performanceList.firstWhere(
+            (item) => item["startupId"] == startupId,
+            orElse: () => {},
+          );
 
-              final performance =
-              performanceList.firstWhere(
-                    (item) => item["startupId"] == startupId,
-                orElse: () => {},
-              );
+          final percentage = (performance["variationPercent"] ?? 0).toDouble();
 
-              final percentage =
-              (performance["variationPercent"] ?? 0)
-                  .toDouble();
+          return {
+            "nome": performance["startupName"] ?? startupId,
 
-              return {
-                "nome": performance["startupName"] ?? startupId,
+            "valor": (data["investedValue"] ?? 0) / 100.0,
 
-                "valor":
-                (data["investedValue"] ?? 0) / 100.0,
+            "quantidade": data["quantity"] ?? 0,
 
-                "quantidade":
-                data["quantity"] ?? 0,
+            "porcentagem": percentage,
 
-                "porcentagem":
-                percentage,
+            "positivo": percentage >= 0,
+          };
+        }).toList();
 
-                "positivo":
-                percentage >= 0,
-              };
-            }).toList();
-
-        historico =
-            (transactionsData["data"] as List<dynamic>? ?? []).map((item) {
-              return {
-                ...item,
-                "amount": (item["amount"] ?? 0) / 100.0,
-              };
-            }).toList();
+        historico = (transactionsData["data"] as List<dynamic>? ?? []).map((
+          item,
+        ) {
+          return {...item, "amount": (item["amount"] ?? 0) / 100.0};
+        }).toList();
 
         carregando = false;
       });
-
     } catch (e) {
+      debugPrint("Erro ao carregar carteira: $e");
 
-      print(
-        "Erro ao carregar carteira: $e",
-      );
+      if (!mounted) return;
 
       setState(() {
         carregando = false;
@@ -155,107 +143,21 @@ class _TelaCarteiraState extends State<TelaCarteira> {
     }
   }
 
-  void abrirModalSaldo() {
-    final TextEditingController saldoController =
-    TextEditingController();
-
-    showDialog(
+  Future<void> abrirModalSaldo() async {
+    final balanceAdded = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFFE8E8E8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "Adicionar saldo",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: TextField(
-            controller: saldoController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: "Digite o valor",
-              prefixText: "R\$ ",
-              filled: true,
-              fillColor: const Color(0xFFDBD9D9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text(
-                "Cancelar",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1482C7),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () async {
-
-                double valor =
-                    double.tryParse(saldoController.text) ?? 0;
-
-                try {
-
-                  final functions =
-                      FirebaseFunctions.instance;
-
-                  final callable =
-                  functions.httpsCallable(
-                    'addBalance',
-                  );
-
-                  await callable.call({
-                    "value": valor,
-                  });
-
-                  await carregarCarteira();
-
-                  Navigator.pop(context);
-
-                } catch (e) {
-
-                  print(
-                    "Erro ao adicionar saldo: $e",
-                  );
-                }
-              },
-              child: const Text("Confirmar"),
-            ),
-          ],
-        );
-      },
+      builder: (_) => _AddBalanceDialog(parseMoney: _parseMoney),
     );
+
+    if (!mounted || balanceAdded != true) return;
+
+    await carregarCarteira();
   }
 
   @override
   Widget build(BuildContext context) {
-
     if (carregando) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -264,15 +166,10 @@ class _TelaCarteiraState extends State<TelaCarteira> {
       body: SafeArea(
         child: Column(
           children: [
-
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: Row(
                 children: [
-
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),
@@ -300,17 +197,13 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-
                     Container(
                       width: 100,
                       height: 100,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF1482C7),
-                            Color(0xFF8DC0DF),
-                          ],
+                          colors: [Color(0xFF1482C7), Color(0xFF8DC0DF)],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -329,31 +222,21 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF1482C7),
-                        ),
+                        border: Border.all(color: const Color(0xFF1482C7)),
                         borderRadius: BorderRadius.circular(18),
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0x661482C8),
-                            Color(0x668DC0DF),
-                          ],
+                          colors: [Color(0x661482C8), Color(0x668DC0DF)],
                         ),
                       ),
 
                       child: Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-
                           Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-
                               Row(
                                 children: [
-
                                   const Text(
                                     "Saldo em dinheiro",
                                     style: TextStyle(
@@ -367,8 +250,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                   GestureDetector(
                                     onTap: () {
                                       setState(() {
-                                        mostrarSaldo =
-                                        !mostrarSaldo;
+                                        mostrarSaldo = !mostrarSaldo;
                                       });
                                     },
                                     child: Icon(
@@ -397,19 +279,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                              const Color(0xFF1482C7),
+                              backgroundColor: const Color(0xFF1482C7),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onPressed: abrirModalSaldo,
-                            child: const Text(
-                              "Adicionar saldo",
-                            ),
-                          )
+                            child: const Text("Adicionar saldo"),
+                          ),
                         ],
                       ),
                     ),
@@ -417,10 +295,8 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                     const SizedBox(height: 25),
 
                     Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
-
                         Padding(
                           padding: EdgeInsets.only(left: 2),
                           child: Text(
@@ -438,7 +314,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             color: Color(0xFF1482C7),
                             fontWeight: FontWeight.bold,
                           ),
-                        )
+                        ),
                       ],
                     ),
 
@@ -446,61 +322,52 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF1482C7),
-                        ),
+                        border: Border.all(color: const Color(0xFF1482C7)),
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
 
                       child: investimentos.isEmpty
                           ? const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Center(
-                          child: Text(
-                            "Você ainda não possui investimentos",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      )
+                              padding: EdgeInsets.all(20),
+                              child: Center(
+                                child: Text(
+                                  "Você ainda não possui investimentos",
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            )
                           : Column(
-                        children: investimentos.map((item) {
+                              children: investimentos.map((item) {
+                                return Column(
+                                  children: [
+                                    _InvestimentoItem(
+                                      nome: item["nome"],
 
-                          return Column(
-                            children: [
+                                      valor:
+                                          "R\$ ${item["valor"].toStringAsFixed(2)}",
 
-                              _InvestimentoItem(
-                                nome: item["nome"],
+                                      porcentagem:
+                                          "${item["porcentagem"].toStringAsFixed(2)}%",
 
-                                valor:
-                                "R\$ ${item["valor"].toStringAsFixed(2)}",
+                                      positivo: item["positivo"],
+                                    ),
 
-                                porcentagem:
-                                "${item["porcentagem"].toStringAsFixed(2)}%",
-
-                                positivo:
-                                item["positivo"],
-                              ),
-
-                              const Divider(
-                                color: Color(0xFF1482C7),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                                    const Divider(color: Color(0xFF1482C7)),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
                     ),
 
                     const SizedBox(height: 25),
 
                     Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
-
                         Padding(
                           padding: EdgeInsets.only(left: 2),
                           child: Text(
@@ -518,7 +385,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             color: Color(0xFF1482C7),
                             fontWeight: FontWeight.bold,
                           ),
-                        )
+                        ),
                       ],
                     ),
 
@@ -526,88 +393,83 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF1482C7),
-                        ),
+                        border: Border.all(color: const Color(0xFF1482C7)),
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
 
                       child: historico.isEmpty
                           ? const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Center(
-                          child: Text(
-                            "Ainda não há transações",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      )
+                              padding: EdgeInsets.all(20),
+                              child: Center(
+                                child: Text(
+                                  "Ainda não há transações",
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            )
                           : Column(
-                        children: historico.map((item) {
+                              children: historico.map((item) {
+                                final type = item["type"];
 
-                          final type = item["type"];
+                                final positivo =
+                                    type == "sell" || type == "deposit";
 
-                          final positivo =
-                              type == "sell" ||
-                                  type == "deposit";
+                                String titulo = "";
 
-                          String titulo = "";
+                                if (type == "buy") {
+                                  titulo =
+                                      "Compra - ${item["startupName"] ?? "Startup"}";
+                                }
 
-                          if (type == "buy") {
-                            titulo =
-                            "Compra - ${item["startupName"] ?? "Startup"}";
-                          }
+                                if (type == "sell") {
+                                  titulo =
+                                      "Venda - ${item["startupName"] ?? "Startup"}";
+                                }
 
-                          if (type == "sell") {
-                            titulo =
-                            "Venda - ${item["startupName"] ?? "Startup"}";
-                          }
+                                if (type == "deposit") {
+                                  titulo = "Adição de saldo";
+                                }
 
-                          if (type == "deposit") {
-                            titulo = "Adição de saldo";
-                          }
+                                return Column(
+                                  children: [
+                                    _HistoricoItem(
+                                      titulo: titulo,
 
-                          return Column(
-                            children: [
+                                      valor:
+                                          "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
 
-                              _HistoricoItem(
-                                titulo: titulo,
+                                      data: item["createdAt"] != null
+                                          ? (() {
+                                              final createdAt =
+                                                  Map<String, dynamic>.from(
+                                                    item["createdAt"],
+                                                  );
 
-                                valor:
-                                "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
+                                              final seconds =
+                                                  createdAt["_seconds"] ?? 0;
 
-                                data: item["createdAt"] != null
-                                    ? (() {
-                                  final createdAt = Map<String, dynamic>.from(
-                                    item["createdAt"],
-                                  );
+                                              return DateFormat(
+                                                'dd/MM/yyyy HH:mm',
+                                              ).format(
+                                                DateTime.fromMillisecondsSinceEpoch(
+                                                  seconds * 1000,
+                                                ),
+                                              );
+                                            })()
+                                          : "",
 
-                                  final seconds = createdAt["_seconds"] ?? 0;
-
-                                  return DateFormat(
-                                    'dd/MM/yyyy HH:mm',
-                                  ).format(
-                                    DateTime.fromMillisecondsSinceEpoch(
-                                      seconds * 1000,
+                                      positivo: positivo,
                                     ),
-                                  );
-                                })()
-                                    : "",
 
-                                positivo: positivo,
-                              ),
-
-                              const Divider(
-                                color: Color(0xFF1482C7),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                                    const Divider(color: Color(0xFF1482C7)),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
                     ),
 
                     const SizedBox(height: 20),
@@ -620,6 +482,119 @@ class _TelaCarteiraState extends State<TelaCarteira> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddBalanceDialog extends StatefulWidget {
+  final double Function(String value) parseMoney;
+
+  const _AddBalanceDialog({required this.parseMoney});
+
+  @override
+  State<_AddBalanceDialog> createState() => _AddBalanceDialogState();
+}
+
+class _AddBalanceDialogState extends State<_AddBalanceDialog> {
+  final _saldoController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _saldoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close({bool added = false}) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(added);
+  }
+
+  Future<void> _addBalance() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final valor = widget.parseMoney(_saldoController.text);
+
+    if (valor <= 0) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Digite um valor maior que zero')),
+      );
+
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final functions = FirebaseFunctions.instance;
+      final callable = functions.httpsCallable('addBalance');
+
+      await callable.call({"value": valor});
+
+      await _close(added: true);
+    } catch (e) {
+      debugPrint("Erro ao adicionar saldo: $e");
+
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar saldo: $e')),
+      );
+
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFFE8E8E8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text(
+        "Adicionar saldo",
+        textAlign: TextAlign.center,
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: TextField(
+        controller: _saldoController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(
+          hintText: "Digite o valor",
+          prefixText: "R\$ ",
+          filled: true,
+          fillColor: const Color(0xFFDBD9D9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : _close,
+          child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1482C7),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _isLoading ? null : _addBalance,
+          child: _isLoading
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text("Confirmar"),
+        ),
+      ],
     );
   }
 }
@@ -639,24 +614,18 @@ class _InvestimentoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    final cor =
-    positivo ? Colors.green : Colors.red;
+    final cor = positivo ? Colors.green : Colors.red;
 
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-
           CircleAvatar(
             radius: 18,
-            backgroundColor:
-            const Color(0xFF1482C7),
+            backgroundColor: const Color(0xFF1482C7),
 
             child: Icon(
-              positivo
-                  ? Icons.trending_up
-                  : Icons.trending_down,
+              positivo ? Icons.trending_up : Icons.trending_down,
               color: Colors.white,
               size: 18,
             ),
@@ -667,17 +636,13 @@ class _InvestimentoItem extends StatelessWidget {
           Expanded(
             child: Text(
               nome,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
           ),
 
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-
               Text(
                 valor,
                 style: const TextStyle(
@@ -697,7 +662,7 @@ class _InvestimentoItem extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -723,15 +688,11 @@ class _HistoricoItem extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-
           CircleAvatar(
             radius: 16,
-            backgroundColor:
-            positivo ? Colors.green : Colors.red,
+            backgroundColor: positivo ? Colors.green : Colors.red,
             child: Icon(
-              positivo
-                  ? Icons.arrow_upward
-                  : Icons.arrow_downward,
+              positivo ? Icons.arrow_upward : Icons.arrow_downward,
               color: Colors.white,
               size: 16,
             ),
@@ -739,34 +700,22 @@ class _HistoricoItem extends StatelessWidget {
 
           const SizedBox(width: 10),
 
-          Expanded(
-            child: Text(
-              titulo,
-              style: const TextStyle(fontSize: 15),
-            ),
-          ),
+          Expanded(child: Text(titulo, style: const TextStyle(fontSize: 15))),
 
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-
               Text(
                 valor,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color:
-                  positivo ? Colors.green : Colors.red,
+                  color: positivo ? Colors.green : Colors.red,
                 ),
               ),
 
-              Text(
-                data,
-                style: const TextStyle(
-                  fontSize: 12,
-                ),
-              ),
+              Text(data, style: const TextStyle(fontSize: 12)),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -782,14 +731,11 @@ class _BottomNav extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
         color: Color(0xFFE8E8E8),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-
           _NavIcon(
             icon: Icons.home,
             label: "Início",
@@ -806,26 +752,15 @@ class _BottomNav extends StatelessWidget {
             },
           ),
 
-          const _NavIcon(
-            icon: Icons.wallet,
-            label: "Carteira",
-            active: true,
-          ),
+          const _NavIcon(icon: Icons.wallet, label: "Carteira", active: true),
 
-          _NavIcon(
-            icon: Icons.show_chart,
-            label: "Valorização",
-            onTap: () {},
-          ),
+          _NavIcon(icon: Icons.show_chart, label: "Valorização", onTap: () {}),
 
           _NavIcon(
             icon: Icons.store,
             label: "Negociar",
             onTap: () {
-              Navigator.pushNamed(
-                  context,
-                  '/balcao',
-              );
+              Navigator.pushNamed(context, '/balcao');
             },
           ),
         ],
@@ -854,13 +789,7 @@ class _NavIcon extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-
-          Icon(
-            icon,
-            color: active
-                ? const Color(0xFF1482C7)
-                : Colors.black,
-          ),
+          Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
 
           const SizedBox(height: 2),
 
@@ -868,9 +797,7 @@ class _NavIcon extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              color: active
-                  ? const Color(0xFF1482C7)
-                  : Colors.black,
+              color: active ? const Color(0xFF1482C7) : Colors.black,
             ),
           ),
         ],
