@@ -1,3 +1,5 @@
+// tela feita pela aluna marilia santos RA 25014905
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../usuario_model.dart';
@@ -181,9 +183,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
             content: TextField(
               controller: codigoController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: "123456",
-              ),
             ),
             actions: [
               TextButton(
@@ -246,9 +245,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
           content: TextField(
             controller: telefoneController,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              hintText: "+5511999999999",
-            ),
           ),
           actions: [
             TextButton(
@@ -332,9 +328,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
           content: TextField(
             controller: codigoController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: "123456",
-            ),
           ),
           actions: [
             TextButton(

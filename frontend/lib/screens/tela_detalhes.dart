@@ -561,17 +561,6 @@ class _TelaDetalhesInformaEsState
 
           const SizedBox(height: 10),
 
-          Text(
-            "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
-
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
           Align(
             alignment: Alignment.centerLeft,
             child: const Text(
@@ -595,6 +584,19 @@ class _TelaDetalhesInformaEsState
               ),
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
+
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+
+          const SizedBox(height: 10),
         ],
       ),
     );
