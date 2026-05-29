@@ -1,4 +1,6 @@
-class Midia {
+//feito pela marilia santos
+
+  class Midia {
   final String titulo;
   final String tipo;
   final String url;
