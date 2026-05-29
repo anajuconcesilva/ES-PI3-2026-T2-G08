@@ -15,6 +15,7 @@ class TelaValorizacao extends StatefulWidget {
 }
 
 class _TelaValorizacaoState extends State<TelaValorizacao> {
+  String _periodoLabelSelecionado = 'Diário';
   List<Map<String, dynamic>> _startups = [];
   Map<String, dynamic>? _startupSelecionada;
   String _periodoSelecionado = 'daily';
@@ -83,8 +84,8 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
     }
   }
 
-  // ── Dialog de compra/venda ───────────────────────────────
-  Future<void> _handleDirectTransaction(bool isBuy) async {
+  // ──  compra/venda ───────────────────────────────
+ Future<void> _handleDirectTransaction(bool isBuy) async {
     if (_startupSelecionada == null) return;
 
     final startupId = _startupSelecionada!['id'] ?? '';
@@ -102,6 +103,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
             Text(
               'Preço atual: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}',
             ),
+            
             const SizedBox(height: 16),
             TextField(
               controller: quantityController,
@@ -148,19 +150,42 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                     tokenPrice: precoCents,
                   );
                 }
+                
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  //  Texto dinâmico baseado na operação
+                  messenger.showSnackBar( 
                     SnackBar(
-                      content: Text(
-                        '${isBuy ? 'Compra' : 'Venda'} realizada com sucesso!',
-                      ),
+                      content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'), 
+                      backgroundColor: const Color.fromARGB(255, 0, 255, 76),
+                      behavior: SnackBarBehavior.floating, // Mantendo o padrão fluido da tela
                     ),
                   );
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro: $e')),
+                  String mensagemAmigavel = 'Ocorreu um erro inesperado.';
+
+                  if (e is FirebaseFunctionsException) {
+                    final mensagemErro = e.message?.toLowerCase() ?? '';
+
+                    if (mensagemErro.contains('insufficient_balance') || 
+                        mensagemErro.contains('saldo insuficiente')) {
+                      mensagemAmigavel = 'Saldo insuficiente para realizar esta transação.';
+                    } else if (e.code == 'unauthenticated') {
+                      mensagemAmigavel = 'Sua sessão expirou. Faça login novamente.';
+                    } else {
+                      mensagemAmigavel = e.message ?? mensagemAmigavel;
+                    }
+                  } else {
+                    mensagemAmigavel = e.toString();
+                  }
+
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(mensagemAmigavel),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                    ),
                   );
                 }
               }
@@ -168,7 +193,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
             child: const Text('Confirmar'),
           ),
         ],
-      ),
+      ),   
     );
   }
 
@@ -209,7 +234,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
     final pontos = _gerarPontos();
     final precoAtual = _precoAtual();
     final variacao = _variacao();
-    final positivo = variacao >= 0;
+    
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -285,11 +310,18 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
               child: Column(
                 children: [
                   Text(
-                    'Desempenho ${_periodos.firstWhere((p) => p['value'] == _periodoSelecionado)['label']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                    'Desempenho $_periodoLabelSelecionado', 
+                     style: const TextStyle(
+                     fontWeight: FontWeight.bold,
+                    fontSize: 15
                     ),
+                  ),
+                  Text('${variacao >= 0 ? "+" : ""}${variacao.toStringAsFixed(2).replaceAll('.', ',')}%',
+                  style: TextStyle(
+                   color: variacao >= 0 ? Colors.green : Colors.red,
+                   fontWeight: FontWeight.bold,
+                   fontSize: 15,
+                  ),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -312,30 +344,37 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                     )
 
                         : _Grafico(
-                      pontos: pontos,
-                      positivo: positivo,
-                      tooltipIndex: _tooltipIndex,
-                      precoAtual: precoAtual,
-                      labelPonto: _labelPonto,
-                      formatarMoeda: _formatarMoeda,
-                      onTouch: (index) =>
-                          setState(() => _tooltipIndex = index),
-                    ),
+                    pontos: pontos,
+                    positivo: pontos.isNotEmpty && pontos.last.y >= pontos.first.y, // <-- Cálculo direto aqui
+                    tooltipIndex: _tooltipIndex,
+                    precoAtual: precoAtual,
+                    labelPonto: _labelPonto,
+                    formatarMoeda: _formatarMoeda,
+                    onTouch: (index) =>
+                        setState(() => _tooltipIndex = index),
                   ),
-                  const SizedBox(height: 8),
-                  _AbasPeriodo(
-                    periodos: _periodos,
-                    selecionado: _periodoSelecionado,
-                    onChanged: (p) {
-                      setState(() => _periodoSelecionado = p);
-                      _carregarValorizacao();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                _AbasPeriodo(
+                  periodos: _periodos,
+                  selecionado: _periodoSelecionado,
+                  onChanged: (p) {
+                    // Encontra o map correspondente ao período clicado
+                    final periodoMap = _periodos.firstWhere((element) => element['value'] == p);
+                    
+                    setState(() {
+                      _periodoSelecionado = p;
+                      _periodoLabelSelecionado = periodoMap['label']!; // <-- Salva o label no estado
+                    });
+                    
+                    _carregarValorizacao();
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
+        ),
 
           // botões vomprar / vender
           if (_startupSelecionada != null)
@@ -527,7 +566,15 @@ class _Grafico extends StatelessWidget {
     required this.onTouch,
   });
 
-  @override
+
+
+ 
+ 
+
+
+ 
+
+ @override
   Widget build(BuildContext context) {
     final corLinha = positivo ? const Color(0xFF4CAF50) : const Color(0xFFE53935);
     final yValues = pontos.map((p) => p.y).toList();
@@ -536,17 +583,23 @@ class _Grafico extends StatelessWidget {
 
     final diff = yMax - yMin;
     final yPadding = diff == 0 ? yMax * 0.1 : diff * 0.2;
-    final rawInterval = diff == 0 ? yMax * 0.05 : diff / 4;
-    final intervalo = rawInterval < 0.01 ? 0.01 : rawInterval;
+
+    
+    final contaOriginalIntervalo = (yMax + yPadding - (yMin - yPadding)) / 5;
+
+    
+    final calculadoMinY = (yMin - yPadding) - (contaOriginalIntervalo * 0.15);
+    final calculadoMaxY = yMax + yPadding + 0.01;
 
     return LineChart(
       LineChartData(
-        minY: yMin - yPadding,
-        maxY: yMax + yPadding + 0.01,
+        minY: calculadoMinY,
+        maxY: calculadoMaxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: (yMax + yPadding - (yMin - yPadding)) / 5,
+          
+          horizontalInterval: contaOriginalIntervalo,
           getDrawingHorizontalLine: (_) => FlLine(
             color: Colors.grey.shade200,
             strokeWidth: 1,
@@ -557,12 +610,26 @@ class _Grafico extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 70,
-              interval: (yMax + yPadding - (yMin - yPadding)) / 5,
-              getTitlesWidget: (value, _) => Text(
-                formatarMoeda(value),
-                style: const TextStyle(fontSize: 9, color: Colors.black54),
-              ),
+       
+              reservedSize: 60, 
+              interval: contaOriginalIntervalo,
+              getTitlesWidget: (value, _) {
+                // Impede que mostre qualquer resíduo negativo criado pelo ajuste físico
+                if (value < -0.1) return const SizedBox.shrink();
+
+                // Garante que valores extremamente próximos de zero fiquem zerados perfeitamente
+                final valorAjustado = value.abs() < 0.1 ? 0.0 : value;
+
+                return Padding(
+                  // Dá um espaço extra à direita para afastar o texto da grade do gráfico
+                  padding: const EdgeInsets.only(right: 10.0),
+                  child: Text(
+                    formatarMoeda(valorAjustado),
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontSize: 9, color: Colors.black54),
+                  ),
+                );
+              },
             ),
           ),
           bottomTitles: AxisTitles(
@@ -572,9 +639,12 @@ class _Grafico extends StatelessWidget {
               getTitlesWidget: (value, _) {
                 final idx = value.toInt();
                 if (idx < 0 || idx >= pontos.length) return const SizedBox.shrink();
-                return Text(
-                  labelPonto(idx),
-                  style: const TextStyle(fontSize: 9, color: Colors.black54),
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    labelPonto(idx),
+                    style: const TextStyle(fontSize: 9, color: Colors.black54),
+                  ),
                 );
               },
             ),
@@ -685,17 +755,10 @@ class _AbasPeriodo extends StatelessWidget {
                 ),
               ),
             ),
-
           );
-
-
-        }).toList(),
-
-      ),
-
-
-    );
-
+        }).toList(), // Fecha o map e o toList()
+      ), 
+    ); 
   }
 }
 class _BottomNavValorizacao extends StatelessWidget {
