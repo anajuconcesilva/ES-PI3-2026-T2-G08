@@ -210,6 +210,10 @@ class _TelaDetalhesInformaEsState
                   data["currentTokenPriceCents"],
                 );
 
+                int capitalRaisedCents = _asInt(
+                  data["capitalRaisedCents"],
+                );
+
                 return Column(
                   children: [
 
@@ -323,6 +327,7 @@ class _TelaDetalhesInformaEsState
                                   return _buildTokenCard(
                                     precoCents,
                                     myQty,
+                                    capitalRaisedCents,
                                   );
                                 },
                               )
@@ -330,6 +335,7 @@ class _TelaDetalhesInformaEsState
                               _buildTokenCard(
                                 precoCents,
                                 0,
+                                capitalRaisedCents,
                               ),
 
                             const SizedBox(height: 25),
@@ -470,6 +476,7 @@ class _TelaDetalhesInformaEsState
   Widget _buildTokenCard(
       int precoCents,
       int meusTokens,
+      int capitalRaisedCents,
       ) {
 
     return Container(
@@ -533,7 +540,7 @@ class _TelaDetalhesInformaEsState
                 "$meusTokens",
 
                 style: const TextStyle(
-                  fontSize: 45,
+                  fontSize: 30,
                   fontWeight:
                   FontWeight.bold,
                 ),
@@ -552,7 +559,33 @@ class _TelaDetalhesInformaEsState
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          Align(
+            alignment: Alignment.centerLeft,
+            child: const Text(
+              "Capital Aportado:",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "R\$ ${(capitalRaisedCents / 100).toStringAsFixed(2).replaceAll('.', ',')}",
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
 
           Text(
             "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
@@ -562,6 +595,8 @@ class _TelaDetalhesInformaEsState
               color: Colors.grey,
             ),
           ),
+
+          const SizedBox(height: 10),
         ],
       ),
     );
