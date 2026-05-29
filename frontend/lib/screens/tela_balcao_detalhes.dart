@@ -39,9 +39,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
   }
 
   double _parseMoney(String value) {
-    return double.parse(
-      value.trim().replaceAll('.', '').replaceAll(',', '.'),
-    );
+    return double.parse(value.trim().replaceAll('.', '').replaceAll(',', '.'));
   }
 
   String _shortUserId(dynamic value) {
@@ -49,9 +47,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
     if (userId.isEmpty) return 'N/A';
 
-    return userId.length <= 8
-        ? userId
-        : userId.substring(0, 8);
+    return userId.length <= 8 ? userId : userId.substring(0, 8);
   }
 
   @override
@@ -67,21 +63,15 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
       final offers = await TradingService.listOffers();
 
       final startupOffers = offers
-          .where(
-            (o) => o['startupId'] == widget.startupId,
-      )
+          .where((o) => o['startupId'] == widget.startupId)
           .toList();
 
       setState(() => _offers = startupOffers);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erro ao carregar ofertas: $e',
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao carregar ofertas: $e')));
       }
     } finally {
       if (mounted) {
@@ -90,201 +80,52 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
     }
   }
 
-  void _showCreateOfferDialog(bool isBuy) {
-    final quantityController = TextEditingController();
-    final priceController = TextEditingController();
-
-    bool isLoading = false;
-    bool dialogAberto = true;
-
-    showDialog(
+  Future<void> _showCreateOfferDialog(bool isBuy) async {
+    final offerCreated = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            isBuy
-                ? 'Nova oferta de compra'
-                : 'Nova oferta de venda',
-          ),
-
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-
-            children: [
-              TextField(
-                controller: quantityController,
-                keyboardType: TextInputType.number,
-
-                decoration: const InputDecoration(
-                  labelText: 'Quantidade de tokens',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: priceController,
-
-                keyboardType:
-                const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-
-                decoration: const InputDecoration(
-                  labelText: 'Preço por token (R\$)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () => Navigator.pop(context),
-
-              child: const Text('Cancelar'),
-            ),
-
-            ElevatedButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                final navigator = Navigator.of(context);
-
-                final messenger =
-                ScaffoldMessenger.of(context);
-
-                if (quantityController.text.isEmpty ||
-                    priceController.text.isEmpty) {
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Preencha todos os campos',
-                      ),
-                    ),
-                  );
-
-                  return;
-                }
-
-                setState(() => isLoading = true);
-
-                try {
-                  final quantity = int.parse(
-                    quantityController.text.trim(),
-                  );
-
-                  final price = _parseMoney(
-                    priceController.text,
-                  );
-
-                  final priceCents =
-                  TradingService.convertToCents(
-                    price,
-                  );
-
-                  if (quantity <= 0 ||
-                      priceCents <= 0) {
-                    throw Exception(
-                      'Quantidade e preço devem ser maiores que zero',
-                    );
-                  }
-
-                  await TradingService.createOffer(
-                    startupId: widget.startupId,
-                    type: isBuy ? 'BUY' : 'SELL',
-                    quantity: quantity,
-                    tokenPrice: priceCents,
-                  );
-
-                  if (mounted) {
-                    dialogAberto = false;
-
-                    navigator.pop();
-
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Oferta criada com sucesso!',
-                        ),
-                      ),
-                    );
-
-                    _loadOffers();
-                  }
-                } catch (e) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Erro: $e'),
-                    ),
-                  );
-                } finally {
-                  if (dialogAberto) {
-                    setState(
-                          () => isLoading = false,
-                    );
-                  }
-                }
-              },
-
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Criar'),
-            ),
-          ],
-        ),
+      builder: (_) => _CreateOfferDialog(
+        startupId: widget.startupId,
+        isBuy: isBuy,
+        parseMoney: _parseMoney,
       ),
-    ).then((_) {
-      quantityController.dispose();
-      priceController.dispose();
-    });
+    );
+
+    if (!mounted || offerCreated != true) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Oferta criada com sucesso!')));
+
+    _loadOffers();
   }
 
   Future<void> _executeOffer(String offerId) async {
     try {
-      await TradingService.executeOffer(
-        offerId: offerId,
-      );
+      await TradingService.executeOffer(offerId: offerId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Oferta executada com sucesso!',
-            ),
-          ),
+          const SnackBar(content: Text('Oferta executada com sucesso!')),
         );
 
         _loadOffers();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erro ao executar oferta: $e',
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao executar oferta: $e')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     final minhasOfertas = _offers
-        .where(
-          (offer) =>
-      offer['userId'] == currentUserId,
-    )
+        .where((offer) => offer['userId'] == currentUserId)
         .toList();
 
     return Scaffold(
@@ -298,9 +139,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
         title: const Text(
           "Balcão de negociação",
 
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
 
         centerTitle: true,
@@ -317,12 +156,9 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
               decoration: BoxDecoration(
                 color: fundoCard,
 
-                borderRadius:
-                BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20),
 
-                border: Border.all(
-                  color: azulPrincipal,
-                ),
+                border: Border.all(color: azulPrincipal),
               ),
 
               child: Row(
@@ -330,21 +166,14 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   CircleAvatar(
                     radius: 30,
 
-                    backgroundColor:
-                    Colors.grey.shade300,
+                    backgroundColor: Colors.grey.shade300,
 
-                    backgroundImage:
-                    widget.imageUrl.isNotEmpty
-                        ? NetworkImage(
-                      widget.imageUrl,
-                    )
+                    backgroundImage: widget.imageUrl.isNotEmpty
+                        ? NetworkImage(widget.imageUrl)
                         : null,
 
                     child: widget.imageUrl.isEmpty
-                        ? Icon(
-                      Icons.business,
-                      color: azulPrincipal,
-                    )
+                        ? Icon(Icons.business, color: azulPrincipal)
                         : null,
                   ),
 
@@ -352,8 +181,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
                       children: [
                         Text(
@@ -361,8 +189,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                           style: const TextStyle(
                             fontSize: 24,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
 
@@ -372,9 +199,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                           style: TextStyle(
                             color: azulPrincipal,
 
-                            decoration:
-                            TextDecoration
-                                .underline,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ],
@@ -382,17 +207,13 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   ),
 
                   Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.end,
 
                     children: [
                       const Text(
                         "Preço médio",
 
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
 
                       Text(
@@ -400,8 +221,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight:
-                          FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
@@ -411,8 +231,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.green,
-                          fontWeight:
-                          FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -433,11 +252,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                       });
                     },
 
-                    child: _buildTab(
-                      "Comprar",
-                      _mostrandoCompra,
-                      verdeOferta,
-                    ),
+                    child: _buildTab("Comprar", _mostrandoCompra, verdeOferta),
                   ),
                 ),
 
@@ -464,17 +279,9 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
             const SizedBox(height: 20),
 
             if (_mostrandoCompra)
-              _buildOfertasSection(
-                "Ofertas de compra",
-                verdeOferta,
-                true,
-              )
+              _buildOfertasSection("Ofertas de compra", verdeOferta, true)
             else
-              _buildOfertasSection(
-                "Ofertas de venda",
-                vermelhoOferta,
-                false,
-              ),
+              _buildOfertasSection("Ofertas de venda", vermelhoOferta, false),
 
             const SizedBox(height: 20),
 
@@ -486,31 +293,24 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF5F5F5),
 
-                borderRadius:
-                BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(15),
 
-                border: Border.all(
-                  color: azulPrincipal,
-                ),
+                border: Border.all(color: azulPrincipal),
               ),
 
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
 
                 children: [
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                     children: [
                       const Text(
                         "Minhas ofertas",
 
                         style: TextStyle(
-                          fontWeight:
-                          FontWeight.bold,
+                          fontWeight: FontWeight.bold,
 
                           fontSize: 16,
                         ),
@@ -522,9 +322,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                         child: const Text(
                           "Atualizar",
 
-                          style: TextStyle(
-                            color: Colors.blue,
-                          ),
+                          style: TextStyle(color: Colors.blue),
                         ),
                       ),
                     ],
@@ -533,80 +331,48 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   const SizedBox(height: 8),
 
                   if (_loadingOffers)
-                    const Center(
-                      child:
-                      CircularProgressIndicator(),
-                    )
+                    const Center(child: CircularProgressIndicator())
                   else if (minhasOfertas.isEmpty)
                     const Text(
                       "Você não possui nenhuma oferta para este ativo.",
 
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(color: Colors.grey),
                     )
                   else
                     Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
-                      children:
-                      minhasOfertas.map((offer) {
-                        final type =
-                        offer['type'] as String;
+                      children: minhasOfertas.map((offer) {
+                        final type = offer['type'] as String;
 
-                        final quantity = _asInt(
-                          offer['quantity'],
-                        );
+                        final quantity = _asInt(offer['quantity']);
 
-                        final price =
-                            _asInt(
-                              offer['tokenPrice'],
-                            ) /
-                                100.0;
+                        final price = _asInt(offer['tokenPrice']) / 100.0;
 
-                        final total =
-                            quantity * price;
+                        final total = quantity * price;
 
-                        final color =
-                        type == 'BUY'
+                        final color = type == 'BUY'
                             ? verdeOferta
                             : vermelhoOferta;
 
                         return Padding(
-                          padding:
-                          const EdgeInsets.only(
-                            bottom: 8,
-                          ),
+                          padding: const EdgeInsets.only(bottom: 8),
 
                           child: Container(
-                            padding:
-                            const EdgeInsets.all(
-                              12,
-                            ),
+                            padding: const EdgeInsets.all(12),
 
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: color,
-                              ),
+                              border: Border.all(color: color),
 
-                              borderRadius:
-                              BorderRadius
-                                  .circular(
-                                8,
-                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
 
                             child: Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                               children: [
                                 Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment
-                                      .start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
 
                                   children: [
                                     Text(
@@ -615,9 +381,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                                           : 'Oferta de Venda',
 
                                       style: TextStyle(
-                                        fontWeight:
-                                        FontWeight
-                                            .bold,
+                                        fontWeight: FontWeight.bold,
 
                                         color: color,
                                       ),
@@ -626,11 +390,9 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                                     Text(
                                       '$quantity tokens por R\$ ${price.toStringAsFixed(2).replaceAll('.', ',')}',
 
-                                      style:
-                                      const TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 12,
-                                        color:
-                                        Colors.grey,
+                                        color: Colors.grey,
                                       ),
                                     ),
                                   ],
@@ -639,11 +401,8 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                                 Text(
                                   'Total: R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
 
-                                  style:
-                                  const TextStyle(
-                                    fontWeight:
-                                    FontWeight
-                                        .bold,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -662,35 +421,22 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () =>
-                        _showCreateOfferDialog(true),
+                    onPressed: () => _showCreateOfferDialog(true),
 
-                    style:
-                    ElevatedButton.styleFrom(
-                      backgroundColor:
-                      const Color(0xFF2D6A4F),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2D6A4F),
 
-                      padding:
-                      const EdgeInsets.symmetric(
-                        vertical: 15,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
 
-                      shape:
-                      RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(
-                          30,
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
 
                     child: const Text(
                       "+ Nova oferta de compra",
 
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
                 ),
@@ -699,35 +445,22 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () =>
-                        _showCreateOfferDialog(false),
+                    onPressed: () => _showCreateOfferDialog(false),
 
-                    style:
-                    ElevatedButton.styleFrom(
-                      backgroundColor:
-                      const Color(0xFFD32F2F),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD32F2F),
 
-                      padding:
-                      const EdgeInsets.symmetric(
-                        vertical: 15,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
 
-                      shape:
-                      RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(
-                          30,
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
 
                     child: const Text(
                       "+ Nova oferta de venda",
 
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
                 ),
@@ -743,29 +476,17 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
     );
   }
 
-  Widget _buildTab(
-      String label,
-      bool active,
-      Color corAtiva,
-      ) {
+  Widget _buildTab(String label, bool active, Color corAtiva) {
     return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
 
       decoration: BoxDecoration(
-        color: active
-            ? corAtiva.withOpacity(0.1)
-            : Colors.grey.shade100,
+        color: active ? corAtiva.withOpacity(0.1) : Colors.grey.shade100,
 
-        borderRadius:
-        BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10),
 
         border: Border.all(
-          color: active
-              ? corAtiva
-              : Colors.transparent,
+          color: active ? corAtiva : Colors.transparent,
 
           width: 1.5,
         ),
@@ -776,9 +497,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
           label,
 
           style: TextStyle(
-            color: active
-                ? corAtiva
-                : Colors.grey.shade600,
+            color: active ? corAtiva : Colors.grey.shade600,
 
             fontWeight: FontWeight.bold,
             fontSize: 15,
@@ -788,22 +507,13 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
     );
   }
 
-  Widget _buildOfertasSection(
-      String titulo,
-      Color cor,
-      bool isCompra,
-      ) {
+  Widget _buildOfertasSection(String titulo, Color cor, bool isCompra) {
     final ofertasFiltered = _offers
-        .where(
-          (o) =>
-      o['type'] ==
-          (isCompra ? 'BUY' : 'SELL'),
-    )
+        .where((o) => o['type'] == (isCompra ? 'BUY' : 'SELL'))
         .toList();
 
     return Column(
-      crossAxisAlignment:
-      CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
         Text(
@@ -819,10 +529,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
         const SizedBox(height: 10),
 
         if (_loadingOffers)
-          const Center(
-            child:
-            CircularProgressIndicator(),
-          )
+          const Center(child: CircularProgressIndicator())
         else if (ofertasFiltered.isEmpty)
           Container(
             width: double.infinity,
@@ -830,29 +537,21 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
             padding: const EdgeInsets.all(16),
 
             decoration: BoxDecoration(
-              border: Border.all(
-                color: azulPrincipal,
-              ),
+              border: Border.all(color: azulPrincipal),
 
-              borderRadius:
-              BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10),
             ),
 
             child: const Center(
-              child: Text(
-                'Nenhuma oferta disponível no momento',
-              ),
+              child: Text('Nenhuma oferta disponível no momento'),
             ),
           )
         else
           Container(
             decoration: BoxDecoration(
-              border: Border.all(
-                color: azulPrincipal,
-              ),
+              border: Border.all(color: azulPrincipal),
 
-              borderRadius:
-              BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10),
             ),
 
             child: Column(
@@ -861,8 +560,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   decoration: BoxDecoration(
                     color: fundoCard,
 
-                    borderRadius:
-                    const BorderRadius.vertical(
+                    borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(10),
                     ),
                   ),
@@ -870,9 +568,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                   padding: const EdgeInsets.all(10),
 
                   child: const Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                     children: [
                       Expanded(
@@ -881,8 +577,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -893,8 +588,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -905,8 +599,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -917,8 +610,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -927,37 +619,24 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
                 ),
 
                 ...ofertasFiltered.map((offer) {
-                  final quantity = _asInt(
-                    offer['quantity'],
-                  );
+                  final quantity = _asInt(offer['quantity']);
 
-                  final tokenPrice =
-                      _asInt(
-                        offer['tokenPrice'],
-                      ) /
-                          100.0;
+                  final tokenPrice = _asInt(offer['tokenPrice']) / 100.0;
 
-                  final total =
-                      quantity * tokenPrice;
+                  final total = quantity * tokenPrice;
 
                   return _buildTableRow(
                     'Usuário ${_shortUserId(offer['userId'])}',
 
                     quantity.toString(),
 
-                    tokenPrice
-                        .toStringAsFixed(2)
-                        .replaceAll('.', ','),
+                    tokenPrice.toStringAsFixed(2).replaceAll('.', ','),
 
-                    total
-                        .toStringAsFixed(2)
-                        .replaceAll('.', ','),
+                    total.toStringAsFixed(2).replaceAll('.', ','),
 
                     cor,
 
-                        () => _executeOffer(
-                      offer['id'] ?? '',
-                    ),
+                    () => _executeOffer(offer['id'] ?? ''),
                   );
                 }),
               ],
@@ -968,77 +647,42 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
   }
 
   Widget _buildTableRow(
-      String user,
-      String qtd,
-      String preco,
-      String total,
-      Color cor,
-      VoidCallback onExecute,
-      ) {
+    String user,
+    String qtd,
+    String preco,
+    String total,
+    Color cor,
+    VoidCallback onExecute,
+  ) {
     return Container(
       padding: const EdgeInsets.all(10),
 
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey.shade200,
-          ),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
 
       child: Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
         children: [
           Expanded(
-            child: Text(
-              user,
-
-              style: TextStyle(
-                color: cor,
-                fontSize: 11,
-              ),
-            ),
+            child: Text(user, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
-            child: Text(
-              qtd,
-
-              style: TextStyle(
-                color: cor,
-                fontSize: 11,
-              ),
-            ),
+            child: Text(qtd, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
-            child: Text(
-              preco,
-
-              style: TextStyle(
-                color: cor,
-                fontSize: 11,
-              ),
-            ),
+            child: Text(preco, style: TextStyle(color: cor, fontSize: 11)),
           ),
 
           Expanded(
             child: Row(
-              mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
               children: [
-                Text(
-                  total,
-
-                  style: TextStyle(
-                    color: cor,
-                    fontSize: 11,
-                  ),
-                ),
+                Text(total, style: TextStyle(color: cor, fontSize: 11)),
 
                 IconButton(
                   icon: const Icon(
@@ -1051,8 +695,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                   padding: EdgeInsets.zero,
 
-                  constraints:
-                  const BoxConstraints(),
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -1063,29 +706,150 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
   }
 }
 
+class _CreateOfferDialog extends StatefulWidget {
+  final String startupId;
+  final bool isBuy;
+  final double Function(String value) parseMoney;
+
+  const _CreateOfferDialog({
+    required this.startupId,
+    required this.isBuy,
+    required this.parseMoney,
+  });
+
+  @override
+  State<_CreateOfferDialog> createState() => _CreateOfferDialogState();
+}
+
+class _CreateOfferDialogState extends State<_CreateOfferDialog> {
+  final _quantityController = TextEditingController();
+  final _priceController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close({bool created = false}) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(created);
+  }
+
+  Future<void> _createOffer() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (_quantityController.text.isEmpty || _priceController.text.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos')),
+      );
+
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final quantity = int.parse(_quantityController.text.trim());
+
+      final price = widget.parseMoney(_priceController.text);
+
+      final priceCents = TradingService.convertToCents(price);
+
+      if (quantity <= 0 || priceCents <= 0) {
+        throw Exception('Quantidade e preço devem ser maiores que zero');
+      }
+
+      await TradingService.createOffer(
+        startupId: widget.startupId,
+        type: widget.isBuy ? 'BUY' : 'SELL',
+        quantity: quantity,
+        tokenPrice: priceCents,
+      );
+
+      await _close(created: true);
+    } catch (e) {
+      if (!mounted) return;
+
+      messenger.showSnackBar(SnackBar(content: Text('Erro: $e')));
+
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.isBuy ? 'Nova oferta de compra' : 'Nova oferta de venda',
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Quantidade de tokens',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Preço por token (R\$)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : _close,
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _createOffer,
+          child: _isLoading
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Criar'),
+        ),
+      ],
+    );
+  }
+}
+
 class _BottomNav extends StatelessWidget {
   const _BottomNav();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
 
       decoration: const BoxDecoration(
         color: Colors.white,
 
-        borderRadius:
-        BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
 
       child: Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
 
         children: [
           _IconNav(
@@ -1093,10 +857,7 @@ class _BottomNav extends StatelessWidget {
             label: "Início",
 
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/geral',
-              );
+              Navigator.pushNamed(context, '/geral');
             },
           ),
 
@@ -1105,10 +866,7 @@ class _BottomNav extends StatelessWidget {
             label: "Startups",
 
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/catalogo',
-              );
+              Navigator.pushNamed(context, '/catalogo');
             },
           ),
 
@@ -1117,20 +875,11 @@ class _BottomNav extends StatelessWidget {
             label: "Carteira",
 
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/carteira',
-              );
+              Navigator.pushNamed(context, '/carteira');
             },
           ),
 
-          _IconNav(
-            icon: Icons.show_chart,
-            label: "Valorização",
-
-            onTap: () {},
-
-          ),
+          _IconNav(icon: Icons.show_chart, label: "Valorização", onTap: () {}),
 
           _IconNav(
             icon: Icons.store,
@@ -1167,13 +916,7 @@ class _IconNav extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
 
         children: [
-          Icon(
-            icon,
-
-            color: active
-                ? const Color(0xFF1482C7)
-                : Colors.black,
-          ),
+          Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
 
           const SizedBox(height: 4),
 
@@ -1183,9 +926,7 @@ class _IconNav extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
 
-              color: active
-                  ? const Color(0xFF1482C7)
-                  : Colors.black,
+              color: active ? const Color(0xFF1482C7) : Colors.black,
             ),
           ),
         ],
