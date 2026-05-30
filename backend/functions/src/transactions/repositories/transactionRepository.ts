@@ -1,3 +1,6 @@
+// Código feito por Lucas David de Sousa
+// RA: 25895152
+
 import { db } from "../shared/firebase";
 
 import { Transaction } from "../types/transaction";
