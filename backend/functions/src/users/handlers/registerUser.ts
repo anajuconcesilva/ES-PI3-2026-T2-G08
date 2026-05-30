@@ -41,7 +41,13 @@ export const registerUser = onCall(async (request) => {
   const validation = validateRegisterInput(request.data);
 
   if (!validation.valid) {
-    throw new HttpsError("invalid-argument", validation.message);
+    throw new HttpsError(
+      "invalid-argument",
+      validation.message,
+      {
+        passwordErrors: validation.passwordErrors ?? [],
+      }
+    );
   }
 
   const { nome, email, cpf, telefone, senha } = validation.data;

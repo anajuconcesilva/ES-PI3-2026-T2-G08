@@ -130,9 +130,30 @@ export function validateEmail(email: string): boolean {
  * Senha
  */
 
-// Validação básica (ajustável de acordo com a preferência do nosso grupo)
-export function validatePassword(password: string): boolean {
-  return password.length >= 6;
+export function validatePassword(password: string): string[] {
+  const errors: string[] = [];
+
+  if (password.length < 8) {
+    errors.push("Pelo menos 8 caracteres");
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Uma letra maiúscula");
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push("Uma letra minúscula");
+  }
+
+  if (!/\d/.test(password)) {
+    errors.push("Um número");
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    errors.push("Um caractere especial");
+  }
+
+  return errors;
 }
 
 /*
@@ -167,8 +188,15 @@ type RegisterInput = {
 };
 
 type ValidationResult =
-  | { valid: false; message: string }
-  | { valid: true; data: RegisterInput };
+  | {
+      valid: false;
+      message: string;
+      passwordErrors?: string[];
+    }
+  | {
+      valid: true;
+      data: RegisterInput;
+    };
 
 export function validateRegisterInput(data: any): ValidationResult {
   const nome = normalizeString(data.nome);
@@ -193,8 +221,14 @@ export function validateRegisterInput(data: any): ValidationResult {
     return { valid: false, message: "Telefone inválido" };
   }
 
-  if (!validatePassword(senha)) {
-    return { valid: false, message: "Senha inválida" };
+  const passwordErrors = validatePassword(senha);
+
+  if (passwordErrors.length > 0) {
+    return {
+      valid: false,
+      message: "Senha inválida",
+      passwordErrors,
+    };
   }
 
   return {

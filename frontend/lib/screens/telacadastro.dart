@@ -18,6 +18,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
   bool obscureSenha = true;
   bool obscureConfirm = true;
   bool isLoading = false;
+  bool hasMinLength = false;
+  bool hasUpperCase = false;
+  bool hasLowerCase = false;
+  bool hasNumber = false;
+  bool hasSpecialChar = false;
 
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
@@ -25,6 +30,19 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final telefoneController = TextEditingController();
   final senhaController = TextEditingController();
   final confirmController = TextEditingController();
+
+  void validarSenha(String senha) {
+    setState(() {
+      hasMinLength = senha.length >= 8;
+      hasUpperCase = RegExp(r'[A-Z]').hasMatch(senha);
+      hasLowerCase = RegExp(r'[a-z]').hasMatch(senha);
+      hasNumber = RegExp(r'\d').hasMatch(senha);
+
+      hasSpecialChar = RegExp(
+        r'[^A-Za-z0-9]',
+      ).hasMatch(senha);
+    });
+  }
 
   Future<void> cadastrarUsuario() async {
     if (!_formKey.currentState!.validate()) return;
@@ -106,6 +124,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    senhaController.addListener(() {
+      validarSenha(senhaController.text);
+    });
+  }
+
+  @override
   void dispose() {
     nomeController.dispose();
     emailController.dispose();
@@ -158,7 +185,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           return null;
                         }),
 
-                        _campo("Telefone", "(19)999999999", telefoneController, null),
+                        _campo("Telefone", "(19)999999999", telefoneController, (v) {
+                          if (v == null || v.isEmpty) return "Digite seu telefone";
+                          return null;
+                        }),
 
                         _campoSenha(
                           "Senha",
@@ -166,9 +196,55 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           senhaController,
                               () => setState(() => obscureSenha = !obscureSenha),
                               (v) {
-                            if (v == null || v.length < 6) return "Mínimo 6 caracteres";
-                            return null;
-                          },
+                                if (!(hasMinLength &&
+                                    hasUpperCase &&
+                                    hasLowerCase &&
+                                    hasNumber &&
+                                    hasSpecialChar)) {
+
+                                  return "A senha não atende aos requisitos";
+                                }
+
+                                return null;
+                              }
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 5,
+                            right: 5,
+                            bottom: 15,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+
+                              _senhaRequirement(
+                                hasMinLength,
+                                "Pelo menos 8 caracteres",
+                              ),
+
+                              _senhaRequirement(
+                                hasUpperCase,
+                                "Uma letra maiúscula",
+                              ),
+
+                              _senhaRequirement(
+                                hasLowerCase,
+                                "Uma letra minúscula",
+                              ),
+
+                              _senhaRequirement(
+                                hasNumber,
+                                "Um número",
+                              ),
+
+                              _senhaRequirement(
+                                hasSpecialChar,
+                                "Um caractere especial",
+                              ),
+                            ],
+                          ),
                         ),
 
                         _campoSenha(
@@ -314,6 +390,35 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: toggle,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _senhaRequirement(
+      bool valid,
+      String text,
+      ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            valid
+                ? Icons.check_circle
+                : Icons.cancel,
+            color: valid
+                ? Colors.green
+                : Colors.red,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
             ),
           ),
         ],
