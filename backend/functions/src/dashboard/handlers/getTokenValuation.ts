@@ -85,6 +85,8 @@ onCall(async (request) => {
     }
   );
 
+points.sort((a: { timestamp: Date }, b: { timestamp: Date }) => a.timestamp.getTime() - b.timestamp.getTime());
+
   const firstPrice =
     points[0].price;
 
