@@ -86,7 +86,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
   }
 
   // ──  compra/venda ───────────────────────────────
- Future<void> _handleDirectTransaction(bool isBuy) async {
+  Future<void> _handleDirectTransaction(bool isBuy) async {
     if (_startupSelecionada == null) return;
 
     final startupId = _startupSelecionada!['id'] ?? '';
@@ -104,7 +104,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
             Text(
               'Preço atual: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}',
             ),
-            
+
             const SizedBox(height: 16),
             TextField(
               controller: quantityController,
@@ -151,14 +151,14 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                     tokenPrice: precoCents,
                   );
                 }
-                
+
                 if (mounted) {
                   //  Texto dinâmico baseado na operação
-                  messenger.showSnackBar( 
+                  messenger.showSnackBar(
                     SnackBar(
-                      content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'), 
+                      content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'),
                       backgroundColor:  Colors.green,
-                      behavior: SnackBarBehavior.floating, 
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                 }
@@ -169,7 +169,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                   if (e is FirebaseFunctionsException) {
                     final mensagemErro = e.message?.toLowerCase() ?? '';
 
-                    if (mensagemErro.contains('insufficient_balance') || 
+                    if (mensagemErro.contains('insufficient_balance') ||
                         mensagemErro.contains('saldo insuficiente')) {
                       mensagemAmigavel = 'Saldo insuficiente para realizar esta transação.';
                     } else if (e.code == 'unauthenticated') {
@@ -194,35 +194,35 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
             child: const Text('Confirmar'),
           ),
         ],
-      ),   
+      ),
     );
   }
 
 
-List<FlSpot> _gerarPontos() {
-  if (_dadosValorizacao == null) return [];
-  final points = _dadosValorizacao!['points'] as List? ?? [];
+  List<FlSpot> _gerarPontos() {
+    if (_dadosValorizacao == null) return [];
+    final points = _dadosValorizacao!['points'] as List? ?? [];
 
-  List<FlSpot> spots = [];
-  for (int i = 0; i < points.length; i++) {
-    
-    final precoCentavos = (points[i]['price'] as num).toDouble();
-    spots.add(FlSpot(i.toDouble(), precoCentavos));
+    List<FlSpot> spots = [];
+    for (int i = 0; i < points.length; i++) {
+
+      final precoCentavos = (points[i]['price'] as num).toDouble();
+      spots.add(FlSpot(i.toDouble(), precoCentavos));
+    }
+
+    return spots;
   }
-
-  return spots;
-}
   double _precoAtual() {
     if (_dadosValorizacao == null) return 0;
     return ((_dadosValorizacao!['currentPrice'] as num?) ?? 0).toDouble();
   }
-  
-double _variacao() {
-  if (_dadosValorizacao == null) return 0;
-  return (_dadosValorizacao!['variationPercent'] as num?)?.toDouble() ?? 0.0;
-}
 
-String _formatarMoeda(double centavos) {
+  double _variacao() {
+    if (_dadosValorizacao == null) return 0;
+    return (_dadosValorizacao!['variationPercent'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  String _formatarMoeda(double centavos) {
     final reais = centavos / 100;
     return 'R\$ ${reais.toStringAsFixed(2).replaceAll('.', ',')}';
   }
@@ -239,14 +239,24 @@ String _formatarMoeda(double centavos) {
     final pontos = _gerarPontos();
     final precoAtual = _precoAtual();
     final variacao = _variacao();
-    
+
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () {
+            // Modificado para retornar para /geral caso não haja histórico na pilha
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/geral');
+            }
+          },
+        ),
         title: const Text(
           'Valorização de Tokens',
           style: TextStyle(
@@ -315,19 +325,19 @@ String _formatarMoeda(double centavos) {
               child: Column(
                 children: [
                   Text(
-                    'Desempenho $_periodoLabelSelecionado', 
-                     style: const TextStyle(
-                     fontWeight: FontWeight.bold,
-                    fontSize: 15
+                    'Desempenho $_periodoLabelSelecionado',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15
                     ),
                   ),
-                 Text('${variacao >= 0 ? "+" : ""}${variacao.toStringAsFixed(2).replaceAll('.', ',')}%',
-        style: TextStyle(
-          color: variacao >= 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
+                  Text('${variacao >= 0 ? "+" : ""}${variacao.toStringAsFixed(2).replaceAll('.', ',')}%',
+                    style: TextStyle(
+                      color: variacao >= 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: pontos.length < 2
@@ -348,39 +358,39 @@ String _formatarMoeda(double centavos) {
                       ),
                     )
 
-                      : _Grafico(
-                    pontos: pontos,
-                   
-                    positivo: variacao >= 0, 
-                    tooltipIndex: _tooltipIndex,
-                    precoAtual: precoAtual,
-                    labelPonto: _labelPonto,
-                    formatarMoeda: _formatarMoeda,
-                    onTouch: (index) =>
-                        setState(() => _tooltipIndex = index),
+                        : _Grafico(
+                      pontos: pontos,
+
+                      positivo: variacao >= 0,
+                      tooltipIndex: _tooltipIndex,
+                      precoAtual: precoAtual,
+                      labelPonto: _labelPonto,
+                      formatarMoeda: _formatarMoeda,
+                      onTouch: (index) =>
+                          setState(() => _tooltipIndex = index),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _AbasPeriodo(
-                  periodos: _periodos,
-                  selecionado: _periodoSelecionado,
-                  onChanged: (p) {
-                    // Encontra o map correspondente ao período clicado
-                    final periodoMap = _periodos.firstWhere((element) => element['value'] == p);
-                    
-                    setState(() {
-                      _periodoSelecionado = p;
-                      _periodoLabelSelecionado = periodoMap['label']!; // <-- Salva o label no estado
-                    });
-                    
-                    _carregarValorizacao();
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 8),
+                  _AbasPeriodo(
+                    periodos: _periodos,
+                    selecionado: _periodoSelecionado,
+                    onChanged: (p) {
+                      // Encontra o map correspondente ao período clicado
+                      final periodoMap = _periodos.firstWhere((element) => element['value'] == p);
+
+                      setState(() {
+                        _periodoSelecionado = p;
+                        _periodoLabelSelecionado = periodoMap['label']!; // <-- Salva o label no estado
+                      });
+
+                      _carregarValorizacao();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
-        ),
 
           // botões vomprar / vender
           if (_startupSelecionada != null)
@@ -419,7 +429,7 @@ String _formatarMoeda(double centavos) {
                         ),
                       ),
                       child: const Text(
-                       'Vender',
+                        'Vender',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -572,15 +582,7 @@ class _Grafico extends StatelessWidget {
     required this.onTouch,
   });
 
-
-
- 
- 
-
-
- 
-
- @override
+  @override
   Widget build(BuildContext context) {
     final corLinha = positivo ? const Color(0xFF4CAF50) : const Color(0xFFE53935);
     final yValues = pontos.map((p) => p.y).toList();
@@ -590,10 +592,10 @@ class _Grafico extends StatelessWidget {
     final diff = yMax - yMin;
     final yPadding = diff == 0 ? yMax * 0.1 : diff * 0.2;
 
-    
+
     final contaOriginalIntervalo = (yMax + yPadding - (yMin - yPadding)) / 5;
 
-    
+
     final calculadoMinY = (yMin - yPadding) - (contaOriginalIntervalo * 0.15);
     final calculadoMaxY = yMax + yPadding + 0.01;
 
@@ -604,7 +606,7 @@ class _Grafico extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          
+
           horizontalInterval: contaOriginalIntervalo,
           getDrawingHorizontalLine: (_) => FlLine(
             color: Colors.grey.shade200,
@@ -616,8 +618,8 @@ class _Grafico extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-       
-              reservedSize: 60, 
+
+              reservedSize: 60,
               interval: contaOriginalIntervalo,
               getTitlesWidget: (value, _) {
                 // Impede que mostre qualquer resíduo negativo criado pelo ajuste físico
@@ -762,8 +764,8 @@ class _AbasPeriodo extends StatelessWidget {
               ),
             ),
           );
-        }).toList(), // Fecha o map e o toList()
-      ), 
-    ); 
+        }).toList(),
+      ),
+    );
   }
 }

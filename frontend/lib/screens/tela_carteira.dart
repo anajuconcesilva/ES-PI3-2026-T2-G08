@@ -26,7 +26,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
   @override
   void initState() {
     super.initState();
-
     carregarCarteira();
   }
 
@@ -44,20 +43,16 @@ class _TelaCarteiraState extends State<TelaCarteira> {
       // =====================
       // WALLET
       // =====================
-
       final walletCallable = functions.httpsCallable('getWallet');
-
       dynamic walletData;
 
       try {
         final walletResponse = await walletCallable.call();
-
         walletData = walletResponse.data;
       } on FirebaseFunctionsException catch (e) {
         if (e.code != 'not-found') {
           rethrow;
         }
-
         walletData = {
           "wallet": {"balance": 0, "investments": {}},
         };
@@ -66,25 +61,19 @@ class _TelaCarteiraState extends State<TelaCarteira> {
       // =====================
       // TRANSACTIONS
       // =====================
-
       final transactionsCallable = functions.httpsCallable('getTransactions');
-
       final transactionsResponse = await transactionsCallable.call();
-
       final transactionsData = transactionsResponse.data;
 
       // =====================
       // DASHBOARD / VALORIZAÇÃO
       // =====================
-
       final dashboardCallable = functions.httpsCallable(
         'getPortfolioValuation',
       );
-
       final dashboardResponse = await dashboardCallable.call({
         "period": "monthly",
       });
-
       final dashboardData = dashboardResponse.data;
 
       if (!mounted) return;
@@ -93,7 +82,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
         saldo = (walletData["wallet"]?["balance"] ?? 0) / 100.0;
 
         final investmentsMap = walletData["wallet"]?["investments"] ?? {};
-
         final performanceList = List<dynamic>.from(
           dashboardData["data"]?["investments"] ?? [],
         );
@@ -102,25 +90,18 @@ class _TelaCarteiraState extends State<TelaCarteira> {
             entry,
             ) {
           final startupId = entry.key;
-
           final data = Map<String, dynamic>.from(entry.value);
-
           final performance = performanceList.firstWhere(
                 (item) => item["startupId"] == startupId,
             orElse: () => {},
           );
-
           final percentage = (performance["variationPercent"] ?? 0).toDouble();
 
           return {
             "nome": performance["startupName"] ?? startupId,
-
             "valor": (data["investedValue"] ?? 0) / 100.0,
-
             "quantidade": data["quantity"] ?? 0,
-
             "porcentagem": percentage,
-
             "positivo": percentage >= 0,
           };
         }).toList();
@@ -135,9 +116,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
       });
     } catch (e) {
       debugPrint("Erro ao carregar carteira: $e");
-
       if (!mounted) return;
-
       setState(() {
         carregando = false;
       });
@@ -151,7 +130,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
     );
 
     if (!mounted || balanceAdded != true) return;
-
     await carregarCarteira();
   }
 
@@ -163,7 +141,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
-
       body: SafeArea(
         child: Column(
           children: [
@@ -173,16 +150,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      // Modificado para retornar para /geral caso não haja histórico na pilha
                       if (Navigator.canPop(context)) {
                         Navigator.pop(context);
                       } else {
+                        // Força a navegação de substituição para o /geral caso não haja histórico
                         Navigator.pushReplacementNamed(context, '/geral');
                       }
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
-
                   const Expanded(
                     child: Text(
                       "Carteira",
@@ -194,12 +170,10 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 48),
                 ],
               ),
             ),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -224,9 +198,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -236,7 +208,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                           colors: [Color(0x661482C8), Color(0x668DC0DF)],
                         ),
                       ),
-
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -253,9 +224,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                         fontSize: 14,
                                       ),
                                     ),
-
                                     const SizedBox(width: 5),
-
                                     GestureDetector(
                                       onTap: () {
                                         setState(() {
@@ -271,9 +240,7 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                                     ),
                                   ],
                                 ),
-
                                 const SizedBox(height: 8),
-
                                 Text(
                                   mostrarSaldo
                                       ? "R\$ ${saldo.toStringAsFixed(2)}"
@@ -286,14 +253,15 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                               ],
                             ),
                           ),
-
                           const SizedBox(width: 10),
-
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1482C7),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               shape: RoundedRectangleBorder(
@@ -303,15 +271,16 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             onPressed: abrirModalSaldo,
                             child: const Text(
                               "Adicionar saldo",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
@@ -325,7 +294,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             ),
                           ),
                         ),
-
                         Text(
                           "Ver todos",
                           style: TextStyle(
@@ -335,16 +303,13 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFF1482C7)),
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
-
                       child: investimentos.isEmpty
                           ? const Padding(
                         padding: EdgeInsets.all(20),
@@ -364,25 +329,19 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             children: [
                               _InvestimentoItem(
                                 nome: item["nome"],
-
                                 valor:
                                 "R\$ ${item["valor"].toStringAsFixed(2)}",
-
                                 porcentagem:
                                 "${item["porcentagem"].toStringAsFixed(2)}%",
-
                                 positivo: item["positivo"],
                               ),
-
                               const Divider(color: Color(0xFF1482C7)),
                             ],
                           );
                         }).toList(),
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
@@ -396,7 +355,6 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             ),
                           ),
                         ),
-
                         Text(
                           "Ver tudo",
                           style: TextStyle(
@@ -406,16 +364,13 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFF1482C7)),
                         borderRadius: BorderRadius.circular(18),
                         color: const Color(0x1A1482C7),
                       ),
-
                       child: historico.isEmpty
                           ? const Padding(
                         padding: EdgeInsets.all(20),
@@ -432,22 +387,18 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                           : Column(
                         children: historico.map((item) {
                           final type = item["type"];
-
                           final positivo =
                               type == "sell" || type == "deposit";
 
                           String titulo = "";
-
                           if (type == "buy") {
                             titulo =
                             "Compra - ${item["startupName"] ?? "Startup"}";
                           }
-
                           if (type == "sell") {
                             titulo =
                             "Venda - ${item["startupName"] ?? "Startup"}";
                           }
-
                           if (type == "deposit") {
                             titulo = "Adição de saldo";
                           }
@@ -456,54 +407,43 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                             children: [
                               _HistoricoItem(
                                 titulo: titulo,
-
                                 valor:
                                 "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
-
                                 data: item["createdAt"] != null
                                     ? (() {
                                   final createdAt =
                                   Map<String, dynamic>.from(
                                     item["createdAt"],
                                   );
-
                                   final seconds =
                                       createdAt["_seconds"] ?? 0;
-
                                   return DateFormat(
                                     'dd/MM/yyyy HH:mm',
                                   ).format(
-                                    DateTime.fromMillisecondsSinceEpoch(
+                                    DateTime
+                                        .fromMillisecondsSinceEpoch(
                                       seconds * 1000,
                                     ),
                                   );
                                 })()
                                     : "",
-
                                 positivo: positivo,
                               ),
-
                               const Divider(color: Color(0xFF1482C7)),
                             ],
                           );
                         }).toList(),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
                   ],
                 ),
               ),
             ),
-
-
           ],
         ),
-
       ),
       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'carteira'),
-
     );
   }
 }
@@ -532,7 +472,6 @@ class _AddBalanceDialogState extends State<_AddBalanceDialog> {
     await Future<void>.delayed(const Duration(milliseconds: 120));
 
     if (!mounted) return;
-
     Navigator.of(context).pop(added);
   }
 
@@ -544,7 +483,6 @@ class _AddBalanceDialogState extends State<_AddBalanceDialog> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Digite um valor maior que zero')),
       );
-
       return;
     }
 
@@ -555,17 +493,13 @@ class _AddBalanceDialogState extends State<_AddBalanceDialog> {
       final callable = functions.httpsCallable('addBalance');
 
       await callable.call({"value": valor});
-
       await _close(added: true);
     } catch (e) {
       debugPrint("Erro ao adicionar saldo: $e");
-
       if (!mounted) return;
-
       messenger.showSnackBar(
         SnackBar(content: Text('Erro ao adicionar saldo: $e')),
       );
-
       setState(() => _isLoading = false);
     }
   }
@@ -645,23 +579,19 @@ class _InvestimentoItem extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: const Color(0xFF1482C7),
-
             child: Icon(
               positivo ? Icons.trending_up : Icons.trending_down,
               color: Colors.white,
               size: 18,
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Text(
               nome,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
           ),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -672,9 +602,7 @@ class _InvestimentoItem extends StatelessWidget {
                   fontSize: 15,
                 ),
               ),
-
               const SizedBox(height: 2),
-
               Text(
                 "${positivo ? "+" : ""}$porcentagem",
                 style: TextStyle(
@@ -719,11 +647,8 @@ class _HistoricoItem extends StatelessWidget {
               size: 16,
             ),
           ),
-
           const SizedBox(width: 10),
-
           Expanded(child: Text(titulo, style: const TextStyle(fontSize: 15))),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -734,7 +659,6 @@ class _HistoricoItem extends StatelessWidget {
                   color: positivo ? Colors.green : Colors.red,
                 ),
               ),
-
               Text(data, style: const TextStyle(fontSize: 12)),
             ],
           ),
