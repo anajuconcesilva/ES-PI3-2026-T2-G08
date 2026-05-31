@@ -82,6 +82,8 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/geral');
             }
           },
         ),
@@ -98,7 +100,7 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
         centerTitle: true,
         titleSpacing: 0,
       ),
-      
+
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
 
@@ -660,13 +662,12 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
               ),
             ),
 
-            
+
           ],
         ),
       ),
       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'negociar'),
     );
-    
+
   }
 }
-

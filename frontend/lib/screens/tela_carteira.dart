@@ -32,8 +32,8 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
   double _parseMoney(String value) {
     return double.tryParse(
-          value.trim().replaceAll('.', '').replaceAll(',', '.'),
-        ) ??
+      value.trim().replaceAll('.', '').replaceAll(',', '.'),
+    ) ??
         0;
   }
 
@@ -99,14 +99,14 @@ class _TelaCarteiraState extends State<TelaCarteira> {
         );
 
         investimentos = Map<String, dynamic>.from(investmentsMap).entries.map((
-          entry,
-        ) {
+            entry,
+            ) {
           final startupId = entry.key;
 
           final data = Map<String, dynamic>.from(entry.value);
 
           final performance = performanceList.firstWhere(
-            (item) => item["startupId"] == startupId,
+                (item) => item["startupId"] == startupId,
             orElse: () => {},
           );
 
@@ -126,8 +126,8 @@ class _TelaCarteiraState extends State<TelaCarteira> {
         }).toList();
 
         historico = (transactionsData["data"] as List<dynamic>? ?? []).map((
-          item,
-        ) {
+            item,
+            ) {
           return {...item, "amount": (item["amount"] ?? 0) / 100.0};
         }).toList();
 
@@ -172,7 +172,14 @@ class _TelaCarteiraState extends State<TelaCarteira> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      // Modificado para retornar para /geral caso não haja histórico na pilha
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacementNamed(context, '/geral');
+                      }
+                    },
                     icon: const Icon(Icons.arrow_back),
                   ),
 
@@ -233,61 +240,71 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Text(
-                                    "Saldo em dinheiro",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      "Saldo em dinheiro",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
 
-                                  const SizedBox(width: 5),
+                                    const SizedBox(width: 5),
 
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        mostrarSaldo = !mostrarSaldo;
-                                      });
-                                    },
-                                    child: Icon(
-                                      mostrarSaldo
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
-                                      size: 18,
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          mostrarSaldo = !mostrarSaldo;
+                                        });
+                                      },
+                                      child: Icon(
+                                        mostrarSaldo
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                        size: 18,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                mostrarSaldo
-                                    ? "R\$ ${saldo.toStringAsFixed(2)}"
-                                    : "••••••",
-                                style: const TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.bold,
+                                  ],
                                 ),
-                              ),
-                            ],
+
+                                const SizedBox(height: 8),
+
+                                Text(
+                                  mostrarSaldo
+                                      ? "R\$ ${saldo.toStringAsFixed(2)}"
+                                      : "••••••",
+                                  style: const TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+
+                          const SizedBox(width: 10),
 
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1482C7),
                               foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onPressed: abrirModalSaldo,
-                            child: const Text("Adicionar saldo"),
+                            child: const Text(
+                              "Adicionar saldo",
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -330,38 +347,38 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                       child: investimentos.isEmpty
                           ? const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Center(
-                                child: Text(
-                                  "Você ainda não possui investimentos",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Column(
-                              children: investimentos.map((item) {
-                                return Column(
-                                  children: [
-                                    _InvestimentoItem(
-                                      nome: item["nome"],
-
-                                      valor:
-                                          "R\$ ${item["valor"].toStringAsFixed(2)}",
-
-                                      porcentagem:
-                                          "${item["porcentagem"].toStringAsFixed(2)}%",
-
-                                      positivo: item["positivo"],
-                                    ),
-
-                                    const Divider(color: Color(0xFF1482C7)),
-                                  ],
-                                );
-                              }).toList(),
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Text(
+                            "Você ainda não possui investimentos",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 15,
                             ),
+                          ),
+                        ),
+                      )
+                          : Column(
+                        children: investimentos.map((item) {
+                          return Column(
+                            children: [
+                              _InvestimentoItem(
+                                nome: item["nome"],
+
+                                valor:
+                                "R\$ ${item["valor"].toStringAsFixed(2)}",
+
+                                porcentagem:
+                                "${item["porcentagem"].toStringAsFixed(2)}%",
+
+                                positivo: item["positivo"],
+                              ),
+
+                              const Divider(color: Color(0xFF1482C7)),
+                            ],
+                          );
+                        }).toList(),
+                      ),
                     ),
 
                     const SizedBox(height: 25),
@@ -401,92 +418,92 @@ class _TelaCarteiraState extends State<TelaCarteira> {
 
                       child: historico.isEmpty
                           ? const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Center(
-                                child: Text(
-                                  "Ainda não há transações",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Column(
-                              children: historico.map((item) {
-                                final type = item["type"];
-
-                                final positivo =
-                                    type == "sell" || type == "deposit";
-
-                                String titulo = "";
-
-                                if (type == "buy") {
-                                  titulo =
-                                      "Compra - ${item["startupName"] ?? "Startup"}";
-                                }
-
-                                if (type == "sell") {
-                                  titulo =
-                                      "Venda - ${item["startupName"] ?? "Startup"}";
-                                }
-
-                                if (type == "deposit") {
-                                  titulo = "Adição de saldo";
-                                }
-
-                                return Column(
-                                  children: [
-                                    _HistoricoItem(
-                                      titulo: titulo,
-
-                                      valor:
-                                          "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
-
-                                      data: item["createdAt"] != null
-                                          ? (() {
-                                              final createdAt =
-                                                  Map<String, dynamic>.from(
-                                                    item["createdAt"],
-                                                  );
-
-                                              final seconds =
-                                                  createdAt["_seconds"] ?? 0;
-
-                                              return DateFormat(
-                                                'dd/MM/yyyy HH:mm',
-                                              ).format(
-                                                DateTime.fromMillisecondsSinceEpoch(
-                                                  seconds * 1000,
-                                                ),
-                                              );
-                                            })()
-                                          : "",
-
-                                      positivo: positivo,
-                                    ),
-
-                                    const Divider(color: Color(0xFF1482C7)),
-                                  ],
-                                );
-                              }).toList(),
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Text(
+                            "Ainda não há transações",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 15,
                             ),
+                          ),
+                        ),
+                      )
+                          : Column(
+                        children: historico.map((item) {
+                          final type = item["type"];
+
+                          final positivo =
+                              type == "sell" || type == "deposit";
+
+                          String titulo = "";
+
+                          if (type == "buy") {
+                            titulo =
+                            "Compra - ${item["startupName"] ?? "Startup"}";
+                          }
+
+                          if (type == "sell") {
+                            titulo =
+                            "Venda - ${item["startupName"] ?? "Startup"}";
+                          }
+
+                          if (type == "deposit") {
+                            titulo = "Adição de saldo";
+                          }
+
+                          return Column(
+                            children: [
+                              _HistoricoItem(
+                                titulo: titulo,
+
+                                valor:
+                                "${positivo ? "+" : "-"}R\$ ${item["amount"]}",
+
+                                data: item["createdAt"] != null
+                                    ? (() {
+                                  final createdAt =
+                                  Map<String, dynamic>.from(
+                                    item["createdAt"],
+                                  );
+
+                                  final seconds =
+                                      createdAt["_seconds"] ?? 0;
+
+                                  return DateFormat(
+                                    'dd/MM/yyyy HH:mm',
+                                  ).format(
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                      seconds * 1000,
+                                    ),
+                                  );
+                                })()
+                                    : "",
+
+                                positivo: positivo,
+                              ),
+
+                              const Divider(color: Color(0xFF1482C7)),
+                            ],
+                          );
+                        }).toList(),
+                      ),
                     ),
 
                     const SizedBox(height: 20),
-                    
+
                   ],
                 ),
               ),
             ),
 
-           
+
           ],
         ),
-        
+
       ),
       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'carteira'),
-      
+
     );
   }
 }
@@ -594,9 +611,9 @@ class _AddBalanceDialogState extends State<_AddBalanceDialog> {
           onPressed: _isLoading ? null : _addBalance,
           child: _isLoading
               ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
               : const Text("Confirmar"),
         ),
       ],
@@ -726,4 +743,3 @@ class _HistoricoItem extends StatelessWidget {
     );
   }
 }
-

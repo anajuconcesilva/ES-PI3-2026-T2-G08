@@ -38,8 +38,14 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                 children: [
 
                   IconButton(
-                    onPressed: () =>
-                        Navigator.pop(context),
+                    onPressed: () {
+                      // Modificado para retornar para /geral caso não haja histórico na pilha
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacementNamed(context, '/geral');
+                      }
+                    },
 
                     icon: const Icon(
                       Icons.arrow_back,
@@ -271,11 +277,11 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
               ),
             ),
 
-            
+
           ],
         ),
       ),
-       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'startups'),
+      bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'startups'),
     );
   }
 
@@ -523,4 +529,3 @@ class _StartupCard extends StatelessWidget {
     );
   }
 }
-
