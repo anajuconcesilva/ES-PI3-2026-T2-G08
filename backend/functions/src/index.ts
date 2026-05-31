@@ -1,3 +1,5 @@
+// Código feito por Felipe Lima Miranda, RA: 25023932
+
 import {initializeApp} from "firebase-admin/app";
 initializeApp();
 import {setGlobalOptions} from "firebase-functions";
