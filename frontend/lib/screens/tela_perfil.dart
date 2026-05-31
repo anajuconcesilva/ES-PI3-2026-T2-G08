@@ -1,5 +1,8 @@
 // tela feita pela aluna marilia santos RA 25014905
 
+// Integração com o backend(parte do MFA) feita por Lucas David de Sousa
+// RA: 25895152
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../usuario_model.dart';

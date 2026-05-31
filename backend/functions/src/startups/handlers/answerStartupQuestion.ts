@@ -1,6 +1,6 @@
 /**
- * Código feito por Lucas David de Sousa(disponibilizado pelo professor), RA: 25895152
- *
+ * Código feito por Felipe Lima Miranda
+ * RA: 25023932
  */
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
