@@ -85,11 +85,21 @@ export const sellToken = onCall(async (request) => {
     );
   }
 
+  // Calcula custo médio dos tokens
+  const averageCost =
+    investment.investedValue /
+    investment.quantity;
+
+  // Remove do valor investido apenas
+  // a parcela correspondente aos tokens vendidos
+  investment.investedValue -=
+    averageCost * quantity;
+
   investment.quantity -= quantity;
 
   wallet.balance += total;
 
-  if (investment.quantity === 0) {
+  if (investment.quantity <= 0) {
     delete wallet.investments[startupId];
 
       await db

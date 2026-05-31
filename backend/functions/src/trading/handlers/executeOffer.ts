@@ -80,12 +80,37 @@ export const executeOffer = onCall(async (request) => {
 
     // 2. Tokens Vendedor
     if (typeof investment === 'number') {
-        const newQty = investment - offer.quantity;
-        if (newQty === 0) delete sellerWallet.investments[offer.startupId];
-        else sellerWallet.investments[offer.startupId] = { quantity: newQty, investedValue: 0 };
+        const newQty =
+          investment - offer.quantity;
+
+        if (newQty <= 0) {
+          delete sellerWallet.investments[
+            offer.startupId
+          ];
+
+        } else {
+          sellerWallet.investments[
+            offer.startupId
+          ] = {
+
+            quantity: newQty,
+
+            // Mantém compatibilidade
+            // com registros antigos
+            investedValue: 0,
+          };
+        }
     } else {
+        const averageCost =
+          investment.investedValue /
+          investment.quantity;
+
+        investment.investedValue -=
+          averageCost * offer.quantity;
+
         investment.quantity -= offer.quantity;
-        if (investment.quantity === 0) delete sellerWallet.investments[offer.startupId];
+
+        if (investment.quantity <= 0) delete sellerWallet.investments[offer.startupId];
     }
 
     // 3. Tokens Comprador
@@ -109,6 +134,11 @@ export const executeOffer = onCall(async (request) => {
 
     const startupRef = db.collection("startups").doc(offer.startupId);
 
+    const startupDoc = await transaction.get(startupRef);
+
+    const startupName =
+      startupDoc.data()?.name ?? "Startup";
+
     // Gravações
     transaction.update(sellerRef, { wallet: sellerWallet });
     transaction.update(buyerRef, { wallet: buyerWallet });
@@ -125,8 +155,24 @@ export const executeOffer = onCall(async (request) => {
 
     // Logs
     const logRef = db.collection("transactions");
-    transaction.set(logRef.doc(), { userId: buyerId, type: "buy", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: FieldValue.serverTimestamp() });
-    transaction.set(logRef.doc(), { userId: sellerId, type: "sell", startupId: offer.startupId, quantity: offer.quantity, amount: total, createdAt: FieldValue.serverTimestamp() });
+
+    transaction.set(logRef.doc(), {
+        userId: buyerId,
+        type: "buy",
+        startupId: offer.startupId,
+        startupName,
+        quantity: offer.quantity,
+        amount: total,
+        createdAt: FieldValue.serverTimestamp() });
+
+    transaction.set(logRef.doc(), {
+        userId: sellerId,
+        type: "sell",
+        startupId: offer.startupId,
+        startupName,
+        quantity: offer.quantity,
+        amount: total,
+        createdAt: FieldValue.serverTimestamp() });
 
     return { success: true };
   });
