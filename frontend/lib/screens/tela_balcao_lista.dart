@@ -499,7 +499,7 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
                                       children: [
 
                                         Text(
-                                          'Volume 24h',
+                                          'Valor em aberto',
 
                                           style:
                                           TextStyle(
