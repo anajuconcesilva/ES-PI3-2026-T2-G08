@@ -21,6 +21,7 @@ O projeto consiste na implementação de uma plataforma digital para simulação
 - Ana Júlia Conceição da Silva
 - Diogo Gonçalves Tonhosolo
 - Felipe Lima Miranda
+- Laura Cristine Soares
 - Lucas David de Sousa
 - Marília Sara Pereira dos Santos
 
