@@ -2,10 +2,13 @@
 //RA: 25894007
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../trading_service.dart';
 import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
+import 'package:mescla_invest_app/screens/tela_detalhes.dart';
 
 class TelaBalcaoDetalhes extends StatefulWidget {
+  
   final String startupId;
   final String nome;
   final String preco;
@@ -24,6 +27,8 @@ class TelaBalcaoDetalhes extends StatefulWidget {
 }
 
 class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
+  double? _variacaoDiaria;
+  bool _carregandoVariacao = true;
   final Color azulPrincipal = const Color(0xFF1482C7);
   final Color vermelhoOferta = const Color(0xFFC80101);
   final Color verdeOferta = const Color(0xFF237E04);
@@ -55,6 +60,34 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
   void initState() {
     super.initState();
     _loadOffers();
+    _loadValuation();
+  }
+
+  Future<void> _loadValuation() async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+      final result = await functions.httpsCallable('getTokenValuation').call({
+        'startupId': widget.startupId,
+        'period': 'daily',
+      });
+      
+      final data = result.data as Map<String, dynamic>;
+      final valuationData = Map<String, dynamic>.from(data['data']);
+      
+      if (mounted) {
+        setState(() {
+          _variacaoDiaria = (valuationData['variationPercent'] as num?)?.toDouble() ?? 0.0;
+          _carregandoVariacao = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _variacaoDiaria = 0.0; // Retorna 0.0 em caso de erro para não quebrar a tela
+          _carregandoVariacao = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadOffers() async {
@@ -140,7 +173,7 @@ Future<void> _executeOffer(String offerId, String offerUserId) async {
         String mensagemAmigavel = 'Erro ao executar a oferta. Tente novamente.';
         final erroString = e.toString().toLowerCase();
 
-        // Captura ('propria oferta')
+        // excessão de tentar usar a propria oferta
         if (erroString.contains('propria oferta') || erroString.contains('própria oferta')) {
           mensagemAmigavel = 'Impossível comprar ou vender a própria oferta.';
         } 
@@ -239,15 +272,25 @@ Future<void> _executeOffer(String offerId, String offerUserId) async {
                           ),
                         ),
 
-                        Text(
+                        GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TelaDetalhesInformaEs(
+                                startupId: widget.startupId,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
                           "Ver detalhes",
-
                           style: TextStyle(
                             color: azulPrincipal,
-
                             decoration: TextDecoration.underline,
                           ),
                         ),
+                      ),
                       ],
                     ),
                   ),
@@ -271,15 +314,23 @@ Future<void> _executeOffer(String offerId, String offerUserId) async {
                         ),
                       ),
 
-                      const Text(
-                        "+ 2,35% hoje",
-
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
+                      _carregandoVariacao
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 4.0),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : Text(
+                          '${_variacaoDiaria! >= 0 ? "+" : ""}${_variacaoDiaria!.toStringAsFixed(2).replaceAll('.', ',')}% hoje',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _variacaoDiaria! >= 0 ? Colors.green : const Color(0xFFE53935),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -298,7 +349,7 @@ Future<void> _executeOffer(String offerId, String offerUserId) async {
                       });
                     },
 
-                    child: _buildTab("Comprar", _mostrandoCompra, verdeOferta),
+                    child: _buildTab("Compras", _mostrandoCompra, verdeOferta),
                   ),
                 ),
 
@@ -313,7 +364,7 @@ Future<void> _executeOffer(String offerId, String offerUserId) async {
                     },
 
                     child: _buildTab(
-                      "Vender",
+                      "Vendas",
                       !_mostrandoCompra,
                       vermelhoOferta,
                     ),
