@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../pergunta_model.dart';
 import '../question_service.dart';
 import 'midia_documentos.dart';
+import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
 
 class TelaPerguntas extends StatefulWidget {
 
@@ -606,10 +607,11 @@ class _TelaPerguntasState
               ),
             ),
 
-            _buildBottomNav(context),
+            
           ],
         ),
       ),
+       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'startups'),
     );
   }
 
@@ -659,98 +661,7 @@ class _TelaPerguntasState
     );
   }
 
-  Widget _buildBottomNav(
-      BuildContext context,
-      ) {
-
-    return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
-
-      decoration:
-      const BoxDecoration(
-        color:
-        Color(0xFFE8E8E8),
-
-        borderRadius:
-        BorderRadius.vertical(
-          top:
-          Radius.circular(25),
-        ),
-      ),
-
-      child: Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceAround,
-
-        children: [
-
-          _NavItem(
-            icon: Icons.home,
-            label: "Início",
-
-            onTap: () {
-
-              Navigator.pushNamed(
-                context,
-                '/geral',
-              );
-            },
-          ),
-
-          _NavItem(
-            icon:
-            Icons.emoji_events,
-
-            label: "Startups",
-
-            active: true,
-
-            onTap: () {},
-          ),
-
-          _NavItem(
-            icon: Icons.wallet,
-            label: "Carteira",
-
-            onTap: () {
-
-              Navigator.pushNamed(
-                context,
-                '/carteira',
-              );
-            },
-          ),
-
-          _NavItem(
-            icon:
-            Icons.show_chart,
-
-            label:
-            "Valorização",
-
-            onTap: () {},
-          ),
-
-          _NavItem(
-            icon: Icons.store,
-            label: "Negociar",
-
-            onTap: () {
-
-              Navigator.pushNamed(
-                context,
-                '/balcao',
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   Widget _perguntaResposta({
     required String pergunta,
     required String resposta,
@@ -818,64 +729,3 @@ class _TelaPerguntasState
   }
 }
 
-class _NavItem
-    extends StatelessWidget {
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(
-      BuildContext context,
-      ) {
-
-    return GestureDetector(
-      onTap: onTap,
-
-      child: Column(
-        mainAxisSize:
-        MainAxisSize.min,
-
-        children: [
-
-          Icon(
-            icon,
-
-            color: active
-                ? const Color(
-              0xFF1482C7,
-            )
-                : Colors.black,
-          ),
-
-          const SizedBox(
-            height: 4,
-          ),
-
-          Text(
-            label,
-
-            style: TextStyle(
-              fontSize: 10,
-
-              color: active
-                  ? const Color(
-                0xFF1482C7,
-              )
-                  : Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

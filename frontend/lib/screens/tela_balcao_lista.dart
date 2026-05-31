@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'tela_balcao_detalhes.dart';
 import '../trading_service.dart';
+import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
 
 class TelaBalcaoLista extends StatefulWidget {
   const TelaBalcaoLista({super.key});
@@ -97,7 +98,7 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
         centerTitle: true,
         titleSpacing: 0,
       ),
-
+      
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
 
@@ -659,153 +660,13 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
               ),
             ),
 
-            const _BottomNav(),
+            
           ],
         ),
       ),
+      bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'negociar'),
     );
+    
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
-
-      decoration: const BoxDecoration(
-        color: Colors.white,
-
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
-      ),
-
-      child: Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceAround,
-
-        children: [
-
-          _Nav(
-            icon: Icons.home,
-            label: "Início",
-
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/geral',
-              );
-            },
-          ),
-
-          _Nav(
-            icon: Icons.emoji_events,
-            label: "Startups",
-
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/catalogo',
-              );
-            },
-          ),
-
-          _Nav(
-            icon: Icons.wallet,
-            label: "Carteira",
-
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/carteira',
-              );
-            },
-          ),
-
-          _Nav(
-            icon: Icons.show_chart,
-            label: "Valorização",
-
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/valorizacao',
-              );
-            },
-          ),
-
-          _Nav(
-            icon: Icons.store,
-            label: "Negociar",
-            active: true,
-
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/balcao',
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Nav extends StatelessWidget {
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  const _Nav({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-
-    return GestureDetector(
-      onTap: onTap,
-
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-
-        children: [
-
-          Icon(
-            icon,
-
-            color: active
-                ? const Color(0xFF1482C7)
-                : Colors.black,
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-
-            style: TextStyle(
-              fontSize: 10,
-
-              color: active
-                  ? const Color(0xFF1482C7)
-                  : Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

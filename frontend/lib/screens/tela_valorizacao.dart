@@ -6,6 +6,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:mescla_invest_app/trading_service.dart';
 import 'package:mescla_invest_app/screens/tela_detalhes.dart';
+import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
 
 class TelaValorizacao extends StatefulWidget {
   const TelaValorizacao({super.key});
@@ -198,26 +199,30 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
   }
 
 
-  List<FlSpot> _gerarPontos() {
-    if (_dadosValorizacao == null) return [];
-    final points = _dadosValorizacao!['points'] as List? ?? [];
-    return points.asMap().entries.map((e) {
-      final price = (e.value['price'] as num).toDouble();
-      return FlSpot(e.key.toDouble(), price);
-    }).toList();
+List<FlSpot> _gerarPontos() {
+  if (_dadosValorizacao == null) return [];
+  final points = _dadosValorizacao!['points'] as List? ?? [];
+
+  List<FlSpot> spots = [];
+  for (int i = 0; i < points.length; i++) {
+    // Puxa o valor do backend direto, sem if e sem multiplicar por 100
+    final precoCentavos = (points[i]['price'] as num).toDouble();
+    spots.add(FlSpot(i.toDouble(), precoCentavos));
   }
 
+  return spots;
+}
   double _precoAtual() {
     if (_dadosValorizacao == null) return 0;
     return ((_dadosValorizacao!['currentPrice'] as num?) ?? 0).toDouble();
   }
+  
+double _variacao() {
+  if (_dadosValorizacao == null) return 0;
+  return (_dadosValorizacao!['variationPercent'] as num?)?.toDouble() ?? 0.0;
+}
 
-  double _variacao() {
-    if (_dadosValorizacao == null) return 0;
-    return ((_dadosValorizacao!['variationPercent'] as num?) ?? 0).toDouble();
-  }
-
-  String _formatarMoeda(double centavos) {
+String _formatarMoeda(double centavos) {
     final reais = centavos / 100;
     return 'R\$ ${reais.toStringAsFixed(2).replaceAll('.', ',')}';
   }
@@ -252,7 +257,7 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
         ),
         centerTitle: true,
       ),
-      bottomNavigationBar: _BottomNavValorizacao(),
+      bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'valorizacao'),
       body: _carregandoStartups
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
@@ -316,13 +321,13 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                     fontSize: 15
                     ),
                   ),
-                  Text('${variacao >= 0 ? "+" : ""}${variacao.toStringAsFixed(2).replaceAll('.', ',')}%',
-                  style: TextStyle(
-                   color: variacao >= 0 ? Colors.green : Colors.red,
-                   fontWeight: FontWeight.bold,
-                   fontSize: 15,
-                  ),
-                  ),
+                 Text('${variacao >= 0 ? "+" : ""}${variacao.toStringAsFixed(2).replaceAll('.', ',')}%',
+        style: TextStyle(
+          color: variacao >= 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: pontos.length < 2
@@ -343,9 +348,10 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                       ),
                     )
 
-                        : _Grafico(
+                      : _Grafico(
                     pontos: pontos,
-                    positivo: pontos.isNotEmpty && pontos.last.y >= pontos.first.y, // <-- Cálculo direto aqui
+                   
+                    positivo: variacao >= 0, 
                     tooltipIndex: _tooltipIndex,
                     precoAtual: precoAtual,
                     labelPonto: _labelPonto,
@@ -759,88 +765,5 @@ class _AbasPeriodo extends StatelessWidget {
         }).toList(), // Fecha o map e o toList()
       ), 
     ); 
-  }
-}
-class _BottomNavValorizacao extends StatelessWidget {
-  const _BottomNavValorizacao();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFFAFA),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.home,
-            label: "Início",
-            onTap: () => Navigator.pushNamed(context, '/geral'),
-          ),
-          _NavItem(
-            icon: Icons.emoji_events,
-            label: "Startups",
-            onTap: () => Navigator.pushNamed(context, '/catalogo'),
-          ),
-          _NavItem(
-            icon: Icons.wallet,
-            label: "Carteira",
-            onTap: () => Navigator.pushNamed(context, '/carteira'),
-          ),
-          _NavItem(
-            icon: Icons.show_chart,
-            label: "Valorização",
-            active: true,
-            onTap: () {},
-          ),
-          _NavItem(
-            icon: Icons.store,
-            label: "Negociar",
-            onTap: () => Navigator.pushNamed(context, '/balcao'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: active ? const Color(0xFF1482C7) : Colors.black,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: active ? const Color(0xFF1482C7) : Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

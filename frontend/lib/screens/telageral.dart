@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mescla_invest_app/screens/tela_perguntas.dart';
+import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
 
 class TelaGeral extends StatefulWidget {
   const TelaGeral({super.key});
@@ -351,10 +352,11 @@ class _TelaGeralState extends State<TelaGeral> {
               ),
             ),
 
-            const _BottomNav(),
+          
           ],
         ),
       ),
+      bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'inicio'),
     );
   }
 }
@@ -413,112 +415,4 @@ class _CardStartup extends StatelessWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-
-      decoration: const BoxDecoration(
-        color: Color(0xFFE8E8E8),
-
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-        children: [
-          _NavIcon(
-            icon: Icons.home,
-            label: "Início",
-
-            active: true,
-
-            onTap: () {},
-          ),
-
-          _NavIcon(
-            icon: Icons.emoji_events,
-
-            label: "Startups",
-
-            onTap: () {
-              Navigator.pushNamed(context, '/catalogo');
-            },
-          ),
-
-          _NavIcon(
-            icon: Icons.wallet,
-            label: "Carteira",
-
-            onTap: () {
-              Navigator.pushNamed(context, '/carteira');
-            },
-          ),
-
-          _NavIcon(
-            icon: Icons.show_chart,
-
-            label: "Valorização",
-            onTap: () {
-              Navigator.pushNamed(context, '/valorizacao');
-            },
-          ),
-
-          _NavIcon(
-            icon: Icons.store,
-            label: "Negociar",
-
-            onTap: () {
-              Navigator.pushNamed(context, '/balcao');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  const _NavIcon({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-
-        children: [
-          Icon(icon, color: active ? const Color(0xFF1482C7) : Colors.black),
-
-          const SizedBox(height: 2),
-
-          Text(
-            label,
-
-            style: TextStyle(
-              fontSize: 10,
-
-              color: active ? const Color(0xFF1482C7) : Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
