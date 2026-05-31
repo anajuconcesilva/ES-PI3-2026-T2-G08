@@ -157,8 +157,8 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                   messenger.showSnackBar( 
                     SnackBar(
                       content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'), 
-                      backgroundColor: const Color.fromARGB(255, 0, 255, 76),
-                      behavior: SnackBarBehavior.floating, // Mantendo o padrão fluido da tela
+                      backgroundColor:  Colors.green,
+                      behavior: SnackBarBehavior.floating, 
                     ),
                   );
                 }
@@ -205,7 +205,7 @@ List<FlSpot> _gerarPontos() {
 
   List<FlSpot> spots = [];
   for (int i = 0; i < points.length; i++) {
-    // Puxa o valor do backend direto, sem if e sem multiplicar por 100
+    
     final precoCentavos = (points[i]['price'] as num).toDouble();
     spots.add(FlSpot(i.toDouble(), precoCentavos));
   }
@@ -288,7 +288,7 @@ String _formatarMoeda(double centavos) {
           ),
           const SizedBox(height: 16),
 
-          // Card da startup — botão "Ver detalhes" abre TelaDetalhesInformaEs
+          //  botão "Ver detalhes" abre TelaDetalhesInformaEs
           if (_startupSelecionada != null)
             _CardStartup(
               startup: _startupSelecionada!,

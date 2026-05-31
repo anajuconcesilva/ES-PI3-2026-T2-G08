@@ -17,7 +17,7 @@ class TelaDetalhesInformaEs extends StatefulWidget {
 }
 
 class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
-  bool _isLoading = false;
+
 
   int _asInt(dynamic value) {
     if (value is int) return value;
@@ -32,98 +32,120 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
     final quantityController = TextEditingController();
 
     await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isBuy ? 'Comprar Tokens' : 'Vender Tokens'),
-
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-
-          children: [
-            Text(
-              'Preço atual: R\$ ${(currentPriceCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: quantityController,
-              keyboardType: TextInputType.number,
-
-              decoration: const InputDecoration(
-                labelText: 'Quantidade',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+  context: context,
+  builder: (context) => AlertDialog(
+    title: Text(isBuy ? 'Comprar Tokens' : 'Vender Tokens'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Preço atual: R\$ ${(currentPriceCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}',
         ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+        const SizedBox(height: 16),
+        TextField(
+          controller: quantityController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Quantidade',
+            border: OutlineInputBorder(),
           ),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancelar'),
+      ),
+      ElevatedButton(
+        onPressed: () async {
+          final qty = int.tryParse(quantityController.text.trim()) ?? 0;
+          final messenger = ScaffoldMessenger.of(context);
+          final navigator = Navigator.of(context);
 
-          ElevatedButton(
-            onPressed: () async {
-              final qty = int.tryParse(quantityController.text.trim()) ?? 0;
+          if (qty <= 0) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Quantidade inválida'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            return;
+          }
 
-              final messenger = ScaffoldMessenger.of(context);
+          // Fecha o diálogo de input imediatamente
+          navigator.pop();
+          if (!mounted) return;
 
-              final navigator = Navigator.of(context);
+          try {
+            if (isBuy) {
+              await TradingService.buyToken(
+                startupId: widget.startupId,
+                quantity: qty,
+                tokenPrice: currentPriceCents,
+              );
+            } else {
+              await TradingService.sellToken(
+                startupId: widget.startupId,
+                quantity: qty,
+                tokenPrice: currentPriceCents,
+              );
+            }
 
-              if (qty <= 0) {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Quantidade inválida')),
-                );
+            if (mounted) {
+             
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'),
+                  backgroundColor:  Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          } catch (e) {
+          if (mounted) {
+            String mensagemAmigavel = 'Ocorreu um erro inesperado.';
+            
+            // Convertem o texto para minúsculo 
+            final erroString = e.toString().toLowerCase();
 
-                return;
-              }
+            //  Tratamento para COMPRA (Saldo em dinheiro insuficiente)
+            if (isBuy && (erroString.contains('insufficient') || erroString.contains('saldo'))) {
+              mensagemAmigavel = 'Saldo insuficiente para realizar esta compra.';
+            } 
+            // Tratamento para VENDA (Falta de tokens na carteira)
+            else if (!isBuy && (erroString.contains('token') || erroString.contains('insufficient') || erroString.contains('quantidade'))) {
+              mensagemAmigavel = 'Você não possui tokens suficientes para vender.';
+            } 
+            //  Sessão expirada
+            else if (erroString.contains('unauthenticated') || erroString.contains('auth')) {
+              mensagemAmigavel = 'Sua sessão expirou. Faça login novamente.';
+            } 
+            // Caso seja outro erro do Firebase
+            else {
+              // Se o erro contiver colchetes tipo [functions/internal], tentamos limpar.
+              // Caso contrário, mostra uma mensagem genérica segura para o usuário.
+              mensagemAmigavel = 'Não foi possível completar a transação. Verifique os dados.';
+            }
 
-              navigator.pop();
-
-              if (!mounted) return;
-
-              setState(() => _isLoading = true);
-
-              try {
-                if (isBuy) {
-                  await TradingService.buyToken(
-                    startupId: widget.startupId,
-                    quantity: qty,
-                    tokenPrice: currentPriceCents,
-                  );
-                } else {
-                  await TradingService.sellToken(
-                    startupId: widget.startupId,
-                    quantity: qty,
-                    tokenPrice: currentPriceCents,
-                  );
-                }
-
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${isBuy ? 'Compra' : 'Venda'} realizada com sucesso!',
-                    ),
-                  ),
-                );
-              } catch (e) {
-                messenger.showSnackBar(SnackBar(content: Text('Erro: $e')));
-              } finally {
-                if (mounted) {
-                  setState(() => _isLoading = false);
-                }
-              }
-            },
-
-            child: const Text('Confirmar'),
-          ),
-        ],
+    
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(mensagemAmigavel),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
+}
+        },
+        child: const Text('Confirmar'),
+      ),
+    ],
+  ),
+);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +154,7 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
       body: SafeArea(
-        child: Stack(
-          children: [
+        child:
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('startups')
@@ -267,14 +288,9 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
               },
             ),
 
-            if (_isLoading)
-              Container(
-                color: Colors.black26,
-
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-          ],
-        ),
+            
+        
+        
       ),
     bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'startups'),
     );
@@ -455,7 +471,7 @@ class _TelaDetalhesInformaEsState extends State<TelaDetalhesInformaEs> {
           ),
         ),
 
-        onPressed: _isLoading ? null : onPressed,
+      onPressed: onPressed,
 
         child: Text(
           label,

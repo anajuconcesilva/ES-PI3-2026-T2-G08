@@ -70,9 +70,20 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
       setState(() => _offers = startupOffers);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao carregar ofertas: $e')));
+        String mensagemAmigavel = 'Não foi possível carregar as ofertas.';
+        final erroString = e.toString().toLowerCase();
+
+        if (erroString.contains('network') || erroString.contains('unavailable')) {
+          mensagemAmigavel = 'Erro de conexão. Verifique sua internet.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensagemAmigavel),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -101,22 +112,55 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
     _loadOffers();
   }
 
-  Future<void> _executeOffer(String offerId) async {
+Future<void> _executeOffer(String offerId, String offerUserId) async {
     try {
+      // Pega o ID do usuário que está logado no app agora
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+      // Se o usuário logado for o mesmo dono da oferta, lança a exceção!
+      if (currentUserId != null && currentUserId == offerUserId) {
+        throw Exception('propria oferta');
+      }
+
       await TradingService.executeOffer(offerId: offerId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Oferta executada com sucesso!')),
+          const SnackBar(
+            content: Text('Oferta executada com sucesso!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
 
         _loadOffers();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao executar oferta: $e')));
+        String mensagemAmigavel = 'Erro ao executar a oferta. Tente novamente.';
+        final erroString = e.toString().toLowerCase();
+
+        // Captura ('propria oferta')
+        if (erroString.contains('propria oferta') || erroString.contains('própria oferta')) {
+          mensagemAmigavel = 'Impossível comprar ou vender a própria oferta.';
+        } 
+        else if ((erroString.contains('insufficient') && erroString.contains('balance')) || erroString.contains('saldo')) {
+          mensagemAmigavel = 'Saldo insuficiente para aceitar esta oferta.';
+        } 
+        else if (erroString.contains('token') || erroString.contains('quantidade')) {
+          mensagemAmigavel = 'Você não possui tokens suficientes para esta operação.';
+        } 
+        else if (erroString.contains('not found') || erroString.contains('unavailable')) {
+          mensagemAmigavel = 'Esta oferta não está mais disponível.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensagemAmigavel),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -644,7 +688,7 @@ class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
 
                       cor,
 
-                      () => _executeOffer(offer['id'] ?? ''),
+                      () => _executeOffer(offer['id'] ?? '', offer['userId'] ?? ''),
                     );
                   }).toList(),
                 ),
@@ -847,7 +891,29 @@ class _CreateOfferDialogState extends State<_CreateOfferDialog> {
     } catch (e) {
       if (!mounted) return;
 
-      messenger.showSnackBar(SnackBar(content: Text('Erro: $e')));
+      String mensagemAmigavel = 'Erro ao criar a oferta.';
+      final erroString = e.toString().toLowerCase();
+
+      //  tentar criar oferta com zero
+      if (erroString.contains('maiores que zero')) {
+        mensagemAmigavel = 'Quantidade e preço devem ser maiores que zero.';
+      } 
+      // Falta de dinheiro para criar oferta de compra
+      else if (widget.isBuy && (erroString.contains('insufficient') || erroString.contains('saldo'))) {
+        mensagemAmigavel = 'Saldo insuficiente para garantir esta oferta de compra.';
+      } 
+      // Falta de token para criar oferta de venda
+      else if (!widget.isBuy && (erroString.contains('token') || erroString.contains('quantidade'))) {
+        mensagemAmigavel = 'Você não possui tokens suficientes para criar esta oferta de venda.';
+      }
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(mensagemAmigavel),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
       setState(() => _isLoading = false);
     }

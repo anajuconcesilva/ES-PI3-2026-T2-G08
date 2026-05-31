@@ -259,7 +259,7 @@ class _TelaSocietarioState extends State<TelaSocietario> {
 
           children: [
             _btnGovernanca("Conselheiros", 0),
-
+            const SizedBox(width: 17),
             _btnGovernanca("Mentores", 1),
           ],
         ),
