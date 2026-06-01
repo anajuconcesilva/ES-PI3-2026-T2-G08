@@ -34,12 +34,11 @@ class _TelaDetalhesInformaEsState
   int _precoCents = 0;
 
   int _meusTokens = 0;
-  
-  
-  int _capitalAportadoCents = 0; 
+
+  int _capitalAportadoCents = 0;
 
   final _functions =
-      FirebaseFunctions.instanceFor(region: 'us-central1');
+  FirebaseFunctions.instanceFor(region: 'us-central1');
 
   @override
   void initState() {
@@ -66,10 +65,10 @@ class _TelaDetalhesInformaEsState
       ]);
 
       final startupData =
-          Map<String, dynamic>.from(results[0].data['data']);
+      Map<String, dynamic>.from(results[0].data['data']);
 
       final walletData =
-          Map<String, dynamic>.from(results[1].data['wallet'] ?? {});
+      Map<String, dynamic>.from(results[1].data['wallet'] ?? {});
       final investments =
           walletData['investments'] as Map<dynamic, dynamic>? ?? {};
       final myInvestment = investments[widget.startupId];
@@ -96,7 +95,7 @@ class _TelaDetalhesInformaEsState
           _meusTokens = myQty;
 
           _capitalAportadoCents = _asInt(startupData['capitalRaisedCents'] ?? 0);
-          
+
           _carregando = false;
         });
       }
@@ -283,7 +282,7 @@ class _TelaDetalhesInformaEsState
         ),
       ),
       bottomNavigationBar:
-          const CustomBottomNav(paginaAtiva: 'startups'),
+      const CustomBottomNav(paginaAtiva: 'startups'),
     );
   }
 
@@ -346,9 +345,9 @@ class _TelaDetalhesInformaEsState
             style: const TextStyle(fontSize: 13),
           ),
           const SizedBox(height: 25),
-          
+
           _buildTokenCard(_precoCents, _meusTokens, _capitalAportadoCents),
-          
+
           const SizedBox(height: 25),
           _buildInfoCard(_sumario, widget.startupId),
           const SizedBox(height: 30),
@@ -364,7 +363,14 @@ class _TelaDetalhesInformaEsState
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Força o redirecionamento limpando todas as rotas anteriores até a base
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/catalogo',
+                    (route) => false,
+              );
+            },
           ),
           const Expanded(
             child: Center(
@@ -420,10 +426,10 @@ class _TelaDetalhesInformaEsState
         child: (url != null && url.isNotEmpty)
             ? Image.network(url, fit: BoxFit.cover)
             : const Icon(
-                Icons.image,
-                size: 80,
-                color: Colors.grey,
-              ),
+          Icons.image,
+          size: 80,
+          color: Colors.grey,
+        ),
       ),
     );
   }
@@ -455,7 +461,7 @@ class _TelaDetalhesInformaEsState
               _actionButton(
                 "Comprar",
                 const Color(0xFF1482C7),
-                () => _handleDirectTransaction(true, precoCents),
+                    () => _handleDirectTransaction(true, precoCents),
               ),
             ],
           ),
@@ -473,12 +479,12 @@ class _TelaDetalhesInformaEsState
               _actionButton(
                 "Vender",
                 const Color(0xFFF44336),
-                () => _handleDirectTransaction(false, precoCents),
+                    () => _handleDirectTransaction(false, precoCents),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          
+
           const Text(
             "Capital Aportado:",
             style: TextStyle(
@@ -509,10 +515,10 @@ class _TelaDetalhesInformaEsState
   }
 
   Widget _actionButton(
-    String label,
-    Color color,
-    VoidCallback onPressed,
-  ) {
+      String label,
+      Color color,
+      VoidCallback onPressed,
+      ) {
     return SizedBox(
       width: 120,
       height: 40,
@@ -576,12 +582,12 @@ class _TelaDetalhesInformaEsState
               ),
               child: const Row(
                 mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Informações",
                     style:
-                        TextStyle(fontWeight: FontWeight.bold),
+                    TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Icon(Icons.arrow_forward),
                 ],
@@ -596,7 +602,7 @@ class _TelaDetalhesInformaEsState
                 const Text(
                   "Sumário Executivo:",
                   style:
-                      TextStyle(fontWeight: FontWeight.bold),
+                  TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(

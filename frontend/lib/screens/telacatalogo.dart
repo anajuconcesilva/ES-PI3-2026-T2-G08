@@ -39,12 +39,12 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
 
                   IconButton(
                     onPressed: () {
-                      // Modificado para retornar para /geral caso não haja histórico na pilha
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      } else {
-                        Navigator.pushReplacementNamed(context, '/geral');
-                      }
+                      // Modificado para redirecionar obrigatoriamente para /geral limpando as rotas anteriores
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/geral',
+                            (route) => false,
+                      );
                     },
 
                     icon: const Icon(

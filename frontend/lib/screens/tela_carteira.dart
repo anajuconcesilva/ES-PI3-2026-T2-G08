@@ -150,12 +150,12 @@ class _TelaCarteiraState extends State<TelaCarteira> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      } else {
-                        // Força a navegação de substituição para o /geral caso não haja histórico
-                        Navigator.pushReplacementNamed(context, '/geral');
-                      }
+                      // Vai obrigatoriamente para /geral limpando toda a árvore de navegação anterior
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/geral',
+                            (route) => false,
+                      );
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),

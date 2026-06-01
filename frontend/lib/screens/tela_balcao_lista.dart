@@ -78,13 +78,13 @@ class _TelaBalcaoListaState extends State<TelaBalcaoLista> {
 
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-
           onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/geral');
-            }
+            // Força o redirecionamento direto para o dashboard (/geral) limpando as telas anteriores
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/geral',
+                  (route) => false,
+            );
           },
         ),
 

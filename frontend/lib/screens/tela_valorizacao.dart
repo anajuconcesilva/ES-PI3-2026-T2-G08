@@ -153,7 +153,6 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                 }
 
                 if (mounted) {
-                  //  Texto dinâmico baseado na operação
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text(isBuy ? 'Compra realizada com sucesso!' : 'Venda realizada com sucesso!'),
@@ -249,12 +248,11 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () {
-            // Modificado para retornar para /geral caso não haja histórico na pilha
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/geral');
-            }
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/geral',
+                  (route) => false,
+            );
           },
         ),
         title: const Text(
@@ -298,7 +296,6 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
           ),
           const SizedBox(height: 16),
 
-          //  botão "Ver detalhes" abre TelaDetalhesInformaEs
           if (_startupSelecionada != null)
             _CardStartup(
               startup: _startupSelecionada!,
@@ -375,12 +372,11 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
                     periodos: _periodos,
                     selecionado: _periodoSelecionado,
                     onChanged: (p) {
-                      // Encontra o map correspondente ao período clicado
                       final periodoMap = _periodos.firstWhere((element) => element['value'] == p);
 
                       setState(() {
                         _periodoSelecionado = p;
-                        _periodoLabelSelecionado = periodoMap['label']!; // <-- Salva o label no estado
+                        _periodoLabelSelecionado = periodoMap['label']!;
                       });
 
                       _carregarValorizacao();
@@ -392,7 +388,6 @@ class _TelaValorizacaoState extends State<TelaValorizacao> {
             ),
           ),
 
-          // botões vomprar / vender
           if (_startupSelecionada != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -536,7 +531,6 @@ class _CardStartup extends StatelessWidget {
                 ),
               ),
             ),
-            // Ver detalhes → abre TelaDetalhesInformaEs
             TextButton(
               onPressed: onVerDetalhes,
               child: const Text(
@@ -592,9 +586,7 @@ class _Grafico extends StatelessWidget {
     final diff = yMax - yMin;
     final yPadding = diff == 0 ? yMax * 0.1 : diff * 0.2;
 
-
     final contaOriginalIntervalo = (yMax + yPadding - (yMin - yPadding)) / 5;
-
 
     final calculadoMinY = (yMin - yPadding) - (contaOriginalIntervalo * 0.15);
     final calculadoMaxY = yMax + yPadding + 0.01;
@@ -606,7 +598,6 @@ class _Grafico extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-
           horizontalInterval: contaOriginalIntervalo,
           getDrawingHorizontalLine: (_) => FlLine(
             color: Colors.grey.shade200,
@@ -618,18 +609,13 @@ class _Grafico extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-
               reservedSize: 60,
               interval: contaOriginalIntervalo,
               getTitlesWidget: (value, _) {
-                // Impede que mostre qualquer resíduo negativo criado pelo ajuste físico
                 if (value < -0.1) return const SizedBox.shrink();
-
-                // Garante que valores extremamente próximos de zero fiquem zerados perfeitamente
                 final valorAjustado = value.abs() < 0.1 ? 0.0 : value;
 
                 return Padding(
-                  // Dá um espaço extra à direita para afastar o texto da grade do gráfico
                   padding: const EdgeInsets.only(right: 10.0),
                   child: Text(
                     formatarMoeda(valorAjustado),
