@@ -1,0 +1,1023 @@
+// CÓDIGO FEITO PELO ALUNO: DIOGO GONÇALVES TONHOSOLO
+//RA: 25894007
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import '../trading_service.dart';
+import 'package:mescla_invest_app/widgets/custom_bottom_nav.dart';
+import 'package:mescla_invest_app/screens/tela_detalhes.dart';
+
+class TelaBalcaoDetalhes extends StatefulWidget {
+  
+  final String startupId;
+  final String nome;
+  final String preco;
+  final String imageUrl;
+
+  const TelaBalcaoDetalhes({
+    super.key,
+    required this.startupId,
+    required this.nome,
+    required this.preco,
+    required this.imageUrl,
+  });
+
+  @override
+  State<TelaBalcaoDetalhes> createState() => _TelaBalcaoDetalhesState();
+}
+
+class _TelaBalcaoDetalhesState extends State<TelaBalcaoDetalhes> {
+  double? _variacaoDiaria;
+  bool _carregandoVariacao = true;
+  final Color azulPrincipal = const Color(0xFF1482C7);
+  final Color vermelhoOferta = const Color(0xFFC80101);
+  final Color verdeOferta = const Color(0xFF237E04);
+  final fundoCard = const Color(0xFFF0F6FA);
+
+  bool _mostrandoCompra = true;
+  List<Map<String, dynamic>> _offers = [];
+  bool _loadingOffers = false;
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  double _parseMoney(String value) {
+    return double.parse(value.trim().replaceAll('.', '').replaceAll(',', '.'));
+  }
+
+  String _shortUserId(dynamic value) {
+    final userId = value?.toString() ?? '';
+
+    if (userId.isEmpty) return 'N/A';
+
+    return userId.length <= 8 ? userId : userId.substring(0, 8);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOffers();
+    _loadValuation();
+  }
+
+  Future<void> _loadValuation() async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+      final result = await functions.httpsCallable('getTokenValuation').call({
+        'startupId': widget.startupId,
+        'period': 'daily',
+      });
+      
+      final data = result.data as Map<String, dynamic>;
+      final valuationData = Map<String, dynamic>.from(data['data']);
+      
+      if (mounted) {
+        setState(() {
+          _variacaoDiaria = (valuationData['variationPercent'] as num?)?.toDouble() ?? 0.0;
+          _carregandoVariacao = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _variacaoDiaria = 0.0; // Retorna 0.0 em caso de erro para não quebrar a tela
+          _carregandoVariacao = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadOffers() async {
+    setState(() => _loadingOffers = true);
+
+    try {
+      final offers = await TradingService.listOffers();
+
+      final startupOffers = offers
+          .where((o) => o['startupId'] == widget.startupId)
+          .toList();
+
+      setState(() => _offers = startupOffers);
+    } catch (e) {
+      if (mounted) {
+        String mensagemAmigavel = 'Não foi possível carregar as ofertas.';
+        final erroString = e.toString().toLowerCase();
+
+        if (erroString.contains('network') || erroString.contains('unavailable')) {
+          mensagemAmigavel = 'Erro de conexão. Verifique sua internet.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensagemAmigavel),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loadingOffers = false);
+      }
+    }
+  }
+
+  Future<void> _showCreateOfferDialog(bool isBuy) async {
+    final offerCreated = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _CreateOfferDialog(
+        startupId: widget.startupId,
+        isBuy: isBuy,
+        parseMoney: _parseMoney,
+      ),
+    );
+
+    if (!mounted || offerCreated != true) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Oferta criada com sucesso!')));
+
+    _loadOffers();
+  }
+
+Future<void> _executeOffer(String offerId, String offerUserId) async {
+    try {
+      // Pega o ID do usuário que está logado no app agora
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+      // Se o usuário logado for o mesmo dono da oferta, lança a exceção!
+      if (currentUserId != null && currentUserId == offerUserId) {
+        throw Exception('propria oferta');
+      }
+
+      await TradingService.executeOffer(offerId: offerId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Oferta executada com sucesso!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        _loadOffers();
+      }
+    } catch (e) {
+      if (mounted) {
+        String mensagemAmigavel = 'Erro ao executar a oferta. Tente novamente.';
+        final erroString = e.toString().toLowerCase();
+
+        // excessão de tentar usar a propria oferta
+        if (erroString.contains('propria oferta') || erroString.contains('própria oferta')) {
+          mensagemAmigavel = 'Impossível comprar ou vender a própria oferta.';
+        } 
+        else if ((erroString.contains('insufficient') && erroString.contains('balance')) || erroString.contains('saldo')) {
+          mensagemAmigavel = 'Saldo insuficiente para aceitar esta oferta.';
+        } 
+        else if (erroString.contains('token') || erroString.contains('quantidade')) {
+          mensagemAmigavel = 'Você não possui tokens suficientes para esta operação.';
+        } 
+        else if (erroString.contains('not found') || erroString.contains('unavailable')) {
+          mensagemAmigavel = 'Esta oferta não está mais disponível.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensagemAmigavel),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    final minhasOfertas = _offers
+        .where((offer) => offer['userId'] == currentUserId)
+        .toList();
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+
+        title: const Text(
+          "Balcão de negociação",
+
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+
+        centerTitle: true,
+      ),
+     
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+
+              decoration: BoxDecoration(
+                color: fundoCard,
+
+                borderRadius: BorderRadius.circular(20),
+
+                border: Border.all(color: azulPrincipal),
+              ),
+
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+
+                    backgroundColor: Colors.grey.shade300,
+
+                    backgroundImage: widget.imageUrl.isNotEmpty
+                        ? NetworkImage(widget.imageUrl)
+                        : null,
+
+                    child: widget.imageUrl.isEmpty
+                        ? Icon(Icons.business, color: azulPrincipal)
+                        : null,
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      children: [
+                        Text(
+                          widget.nome,
+
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TelaDetalhesInformaEs(
+                                startupId: widget.startupId,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Ver detalhes",
+                          style: TextStyle(
+                            color: azulPrincipal,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      ],
+                    ),
+                  ),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+
+                    children: [
+                      const Text(
+                        "Preço médio",
+
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+
+                      Text(
+                        "R\$ ${widget.preco}",
+
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      _carregandoVariacao
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 4.0),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : Text(
+                          '${_variacaoDiaria! >= 0 ? "+" : ""}${_variacaoDiaria!.toStringAsFixed(2).replaceAll('.', ',')}% hoje',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _variacaoDiaria! >= 0 ? Colors.green : const Color(0xFFE53935),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _mostrandoCompra = true;
+                      });
+                    },
+
+                    child: _buildTab("Compras", _mostrandoCompra, verdeOferta),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _mostrandoCompra = false;
+                      });
+                    },
+
+                    child: _buildTab(
+                      "Vendas",
+                      !_mostrandoCompra,
+                      vermelhoOferta,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            if (_mostrandoCompra)
+              _buildOfertasSection("Ofertas de compra", verdeOferta, true)
+            else
+              _buildOfertasSection("Ofertas de venda", vermelhoOferta, false),
+
+            const SizedBox(height: 20),
+
+            Container(
+              width: double.infinity,
+
+              padding: const EdgeInsets.all(16),
+
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+
+                borderRadius: BorderRadius.circular(15),
+
+                border: Border.all(color: azulPrincipal),
+              ),
+
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                    children: [
+                      const Text(
+                        "Minhas ofertas",
+
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+
+                          fontSize: 16,
+                        ),
+                      ),
+
+                      TextButton(
+                        onPressed: _loadOffers,
+
+                        child: const Text(
+                          "Atualizar",
+
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  if (_loadingOffers)
+                    const Center(child: CircularProgressIndicator())
+                  else if (minhasOfertas.isEmpty)
+                    const Text(
+                      "Você não possui nenhuma oferta para este ativo.",
+
+                      style: TextStyle(color: Colors.grey),
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      children: minhasOfertas.map((offer) {
+                        final type = offer['type'] as String;
+
+                        final quantity = _asInt(offer['quantity']);
+
+                        final price = _asInt(offer['tokenPrice']) / 100.0;
+
+                        final total = quantity * price;
+
+                        final color = type == 'BUY'
+                            ? verdeOferta
+                            : vermelhoOferta;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+
+                            decoration: BoxDecoration(
+                              border: Border.all(color: color),
+
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                                  children: [
+                                    Text(
+                                      type == 'BUY'
+                                          ? 'Oferta de Compra'
+                                          : 'Oferta de Venda',
+
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+
+                                        color: color,
+                                      ),
+                                    ),
+
+                                    Text(
+                                      '$quantity tokens por R\$ ${price.toStringAsFixed(2).replaceAll('.', ',')}',
+
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                Text(
+                                  'Total: R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
+
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _showCreateOfferDialog(true),
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2D6A4F),
+
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+
+                    child: const Text(
+                      "+ Nova oferta de compra",
+
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _showCreateOfferDialog(false),
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD32F2F),
+
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+
+                    child: const Text(
+                      "+ Nova oferta de venda",
+
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+       bottomNavigationBar: const CustomBottomNav(paginaAtiva: 'negociar'),
+
+       
+    );
+  }
+
+  Widget _buildTab(String label, bool active, Color corAtiva) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+
+      decoration: BoxDecoration(
+        color: active ? corAtiva.withValues(alpha: 0.1) : Colors.grey.shade100,
+
+        borderRadius: BorderRadius.circular(10),
+
+        border: Border.all(
+          color: active ? corAtiva : Colors.transparent,
+
+          width: 1.5,
+        ),
+      ),
+
+      child: Center(
+        child: Text(
+          label,
+
+          style: TextStyle(
+            color: active ? corAtiva : Colors.grey.shade600,
+
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfertasSection(String titulo, Color cor, bool isCompra) {
+    final ofertasFiltered = _offers
+        .where((o) => o['type'] == (isCompra ? 'BUY' : 'SELL'))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        Text(
+          titulo,
+
+          style: TextStyle(
+            color: cor,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_loadingOffers)
+          const Center(child: CircularProgressIndicator())
+        else if (ofertasFiltered.isEmpty)
+          Container(
+            width: double.infinity,
+
+            padding: const EdgeInsets.all(16),
+
+            decoration: BoxDecoration(
+              border: Border.all(color: azulPrincipal),
+
+              borderRadius: BorderRadius.circular(10),
+            ),
+
+            child: const Center(
+              child: Text('Nenhuma oferta disponível no momento'),
+            ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: azulPrincipal),
+
+              borderRadius: BorderRadius.circular(10),
+            ),
+
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: fundoCard,
+
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(10),
+                    ),
+                  ),
+
+                  padding: const EdgeInsets.all(10),
+
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          "Usuário",
+
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          "Quantidade",
+
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          "Preço(R\$)",
+
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          "Total(R\$)",
+
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                _OfferRowsScrollbar(
+                  children: ofertasFiltered.map((offer) {
+                    final quantity = _asInt(offer['quantity']);
+
+                    final tokenPrice = _asInt(offer['tokenPrice']) / 100.0;
+
+                    final total = quantity * tokenPrice;
+
+                    return _buildTableRow(
+                      'Usuário ${_shortUserId(offer['userId'])}',
+
+                      quantity.toString(),
+
+                      tokenPrice.toStringAsFixed(2).replaceAll('.', ','),
+
+                      total.toStringAsFixed(2).replaceAll('.', ','),
+
+                      cor,
+
+                      () => _executeOffer(offer['id'] ?? '', offer['userId'] ?? ''),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTableRow(
+    String user,
+    String qtd,
+    String preco,
+    String total,
+    Color cor,
+    VoidCallback onExecute,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(user, style: TextStyle(color: cor, fontSize: 11)),
+          ),
+
+          Expanded(
+            flex: 2,
+            child: Text(qtd, style: TextStyle(color: cor, fontSize: 11)),
+          ),
+
+          Expanded(
+            flex: 2,
+            child: Text(preco, style: TextStyle(color: cor, fontSize: 11)),
+          ),
+
+          Expanded(
+            flex: 3,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+              children: [
+                Expanded(
+                  child: Text(
+                    total,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: cor, fontSize: 11),
+                  ),
+                ),
+
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: Colors.blue,
+                    ),
+                    onPressed: onExecute,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferRowsScrollbar extends StatefulWidget {
+  final List<Widget> children;
+
+  const _OfferRowsScrollbar({required this.children});
+
+  @override
+  State<_OfferRowsScrollbar> createState() => _OfferRowsScrollbarState();
+}
+
+class _OfferRowsScrollbarState extends State<_OfferRowsScrollbar> {
+  final _scrollController = ScrollController();
+  static const int _minOffersForScrollbar = 6;
+  static const double _rowHeight = 45;
+  static const double _maxHeight = 225;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contentHeight = widget.children.length * _rowHeight;
+    final shouldShowScrollbar =
+        widget.children.length >= _minOffersForScrollbar;
+    final listHeight = shouldShowScrollbar ? _maxHeight : contentHeight;
+
+    if (!shouldShowScrollbar) {
+      return Column(mainAxisSize: MainAxisSize.min, children: widget.children);
+    }
+
+    return SizedBox(
+      height: listHeight,
+      child: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        child: ListView(
+          controller: _scrollController,
+          padding: EdgeInsets.zero,
+          children: widget.children,
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateOfferDialog extends StatefulWidget {
+  final String startupId;
+  final bool isBuy;
+  final double Function(String value) parseMoney;
+
+  const _CreateOfferDialog({
+    required this.startupId,
+    required this.isBuy,
+    required this.parseMoney,
+  });
+
+  @override
+  State<_CreateOfferDialog> createState() => _CreateOfferDialogState();
+}
+
+class _CreateOfferDialogState extends State<_CreateOfferDialog> {
+  final _quantityController = TextEditingController();
+  final _priceController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close({bool created = false}) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(created);
+  }
+
+  Future<void> _createOffer() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (_quantityController.text.isEmpty || _priceController.text.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos')),
+      );
+
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final quantity = int.parse(_quantityController.text.trim());
+
+      final price = widget.parseMoney(_priceController.text);
+
+      final priceCents = TradingService.convertToCents(price);
+
+      if (quantity <= 0 || priceCents <= 0) {
+        throw Exception('Quantidade e preço devem ser maiores que zero');
+      }
+
+      await TradingService.createOffer(
+        startupId: widget.startupId,
+        type: widget.isBuy ? 'BUY' : 'SELL',
+        quantity: quantity,
+        tokenPrice: priceCents,
+      );
+
+      await _close(created: true);
+    } catch (e) {
+      if (!mounted) return;
+
+      String mensagemAmigavel = 'Erro ao criar a oferta.';
+      final erroString = e.toString().toLowerCase();
+
+      //  tentar criar oferta com zero
+      if (erroString.contains('maiores que zero')) {
+        mensagemAmigavel = 'Quantidade e preço devem ser maiores que zero.';
+      } 
+      // Falta de dinheiro para criar oferta de compra
+      else if (widget.isBuy && (erroString.contains('insufficient') || erroString.contains('saldo'))) {
+        mensagemAmigavel = 'Saldo insuficiente para garantir esta oferta de compra.';
+      } 
+      // Falta de token para criar oferta de venda
+      else if (!widget.isBuy && (erroString.contains('token') || erroString.contains('quantidade'))) {
+        mensagemAmigavel = 'Você não possui tokens suficientes para criar esta oferta de venda.';
+      }
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(mensagemAmigavel),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.isBuy ? 'Nova oferta de compra' : 'Nova oferta de venda',
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Quantidade de tokens',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Preço por token (R\$)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : _close,
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _createOffer,
+          child: _isLoading
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Criar'),
+        ),
+      ],
+    );
+  }
+}
+
