@@ -22,11 +22,9 @@ class TelaDetalhesInformaEs extends StatefulWidget {
 class _TelaDetalhesInformaEsState
     extends State<TelaDetalhesInformaEs> {
 
-
   bool _carregando = true;
   String? _erro;
   bool _isLoading = false;
-
 
   String _nome = '';
   String _descricaoCurta = '';
@@ -36,6 +34,9 @@ class _TelaDetalhesInformaEsState
   int _precoCents = 0;
 
   int _meusTokens = 0;
+  
+  
+  int _capitalAportadoCents = 0; 
 
   final _functions =
       FirebaseFunctions.instanceFor(region: 'us-central1');
@@ -55,7 +56,6 @@ class _TelaDetalhesInformaEsState
     }
 
     try {
-      
       final results = await Future.wait([
         _functions
             .httpsCallable('getStartupDetails')
@@ -68,7 +68,6 @@ class _TelaDetalhesInformaEsState
       final startupData =
           Map<String, dynamic>.from(results[0].data['data']);
 
-     
       final walletData =
           Map<String, dynamic>.from(results[1].data['wallet'] ?? {});
       final investments =
@@ -77,7 +76,6 @@ class _TelaDetalhesInformaEsState
 
       int myQty = 0;
       if (myInvestment is int) {
-        
         myQty = myInvestment;
       } else if (myInvestment is Map) {
         myQty = _asInt(myInvestment['quantity']);
@@ -96,6 +94,9 @@ class _TelaDetalhesInformaEsState
           _precoCents =
               _asInt(startupData['currentTokenPriceCents']);
           _meusTokens = myQty;
+
+          _capitalAportadoCents = _asInt(startupData['capitalRaisedCents'] ?? 0);
+          
           _carregando = false;
         });
       }
@@ -233,8 +234,6 @@ class _TelaDetalhesInformaEsState
                     ),
                   );
 
-                  // Recarrega os dados para atualizar
-                  // a quantidade de tokens exibida
                   await _carregarDados();
                 }
               } catch (e) {
@@ -264,7 +263,6 @@ class _TelaDetalhesInformaEsState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
-
       body: SafeArea(
         child: Stack(
           children: [
@@ -274,8 +272,6 @@ class _TelaDetalhesInformaEsState
                 Expanded(child: _buildBody()),
               ],
             ),
-
-            // Overlay de loading durante compra/venda
             if (_isLoading)
               Container(
                 color: Colors.black26,
@@ -286,7 +282,6 @@ class _TelaDetalhesInformaEsState
           ],
         ),
       ),
-
       bottomNavigationBar:
           const CustomBottomNav(paginaAtiva: 'startups'),
     );
@@ -351,7 +346,9 @@ class _TelaDetalhesInformaEsState
             style: const TextStyle(fontSize: 13),
           ),
           const SizedBox(height: 25),
-          _buildTokenCard(_precoCents, _meusTokens),
+          
+          _buildTokenCard(_precoCents, _meusTokens, _capitalAportadoCents),
+          
           const SizedBox(height: 25),
           _buildInfoCard(_sumario, widget.startupId),
           const SizedBox(height: 30),
@@ -431,11 +428,11 @@ class _TelaDetalhesInformaEsState
     );
   }
 
-  Widget _buildTokenCard(int precoCents, int meusTokens) {
+  Widget _buildTokenCard(int precoCents, int meusTokens, int capitalAportadoCents) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: const Color(0xFF1482C7),
@@ -443,6 +440,7 @@ class _TelaDetalhesInformaEsState
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -468,22 +466,42 @@ class _TelaDetalhesInformaEsState
               Text(
                 "$meusTokens",
                 style: const TextStyle(
-                  fontSize: 45,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               _actionButton(
                 "Vender",
-                Colors.red,
+                const Color(0xFFF44336),
                 () => _handleDirectTransaction(false, precoCents),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          
+          const Text(
+            "Capital Aportado:",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
-            "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
+            "R\$ ${(capitalAportadoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
             style: const TextStyle(
-                fontSize: 12, color: Colors.grey),
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              "Preço por token: R\$ ${(precoCents / 100.0).toStringAsFixed(2).replaceAll('.', ',')}",
+              style: const TextStyle(
+                  fontSize: 12, color: Colors.grey),
+            ),
           ),
         ],
       ),
@@ -510,7 +528,7 @@ class _TelaDetalhesInformaEsState
         child: Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -522,7 +540,7 @@ class _TelaDetalhesInformaEsState
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: const Color(0xFF1482C7),

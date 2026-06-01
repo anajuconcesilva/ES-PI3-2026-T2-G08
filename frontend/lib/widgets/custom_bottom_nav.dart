@@ -16,7 +16,7 @@ class CustomBottomNav extends StatelessWidget {
       // Mantemos o padding apenas no topo e na base (sem safe area manual)
       padding: const EdgeInsets.only(top: 12, bottom: 8), 
       decoration: const BoxDecoration(
-        color: Color.fromARGB(255, 255, 255, 255),
+        color: Color.fromARGB(255, 237, 237, 237),
         boxShadow: [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))
         ],
