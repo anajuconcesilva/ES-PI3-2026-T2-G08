@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      initialRoute: '/geral',
+      initialRoute: '/inicio',
 
       routes: {
         '/inicio': (_) => const TelaInicio(),
