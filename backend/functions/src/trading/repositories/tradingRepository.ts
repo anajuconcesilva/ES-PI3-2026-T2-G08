@@ -1,3 +1,6 @@
+// Código feito por Laura Cristine Soares
+// RA: 24802431
+
 import { getFirestore } from "firebase-admin/firestore";
 
 import { Offer } from "../types/trading";

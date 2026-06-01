@@ -1,3 +1,6 @@
+// Código feito por Laura Cristine Soares
+// RA: 24802431
+
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser } from "../../wallet/shared/auth";
